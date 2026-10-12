@@ -1,0 +1,5 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Panels/SuperAdmin/**/*';
+@source '../../../../app/Panels/Commons/**/*';
+@source '../../../../app/Modules/**/*';
