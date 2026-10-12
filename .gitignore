@@ -3,7 +3,8 @@
 .env
 .env.backup
 .env.production
-.env.testing
+# .env.testing is committed on purpose: comment-only anchor for the test
+# bootstrapper (see phpunit.xml). Add local overrides under a different name.
 .phpactor.json
 .phpunit.result.cache
 /.fleet
