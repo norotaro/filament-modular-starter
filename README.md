@@ -38,6 +38,7 @@ Constraints are from `composer.json` / `package.json`.
 | CSS | `tailwindcss` | `^4.1` | 4.1.18 |
 | Testing | `pestphp/pest` | `^5.0` | 5.3.1 |
 | Test runner | `phpunit/phpunit` | transitive (via Pest) | 13.4.1 |
+| Runtime | `laravel/octane` | `^2.21` | 2.21.0 |
 | Static analysis | `larastan/larastan` | `^3.0` | 3.13.0 |
 | Formatting | `laravel/pint` | `^1.24` | 1.32.1 |
 | Roles | `tightenco/parental` | `^1.4` | 1.6.0 |
@@ -121,6 +122,28 @@ composer test
 php artisan test --testsuite=Feature
 php artisan test --filter=some_test_name
 ```
+
+---
+
+## 🚀 Production (Coolify)
+
+Coolify builds the image with Nixpacks, which reads `nixpacks.toml` at the repo root. The build phase runs `php artisan octane:install --server=frankenphp --no-interaction`, so no FrankenPHP server config is committed — it is generated at build time. At container start, `start.sh` transforms `nginx.template.conf` via Nixpacks' `prestart.mjs` (shipped by the Nixpacks PHP provider, not this repo) and hands off to supervisor, which runs four processes:
+
+| Process | Command |
+|---------|---------|
+| `worker-nginx` | `nginx -c /etc/nginx.conf` — listens on `${PORT}`, proxies to `127.0.0.1:8000` |
+| `worker-octane` | `php artisan octane:start --server=frankenphp --host=127.0.0.1 --port=8000 --workers=auto --max-requests=500` |
+| `worker-laravel` | `php artisan queue:work --sleep=30 --tries=3 --max-time=3600` (`QUEUE_CONNECTION=database`) |
+| `worker-scheduler` | `while true; do php artisan schedule:run; sleep 60; done` |
+
+Two deliberate choices carried over from the source app:
+
+- **`composer install --ignore-platform-reqs`** in the install phase: the Nixpacks image lacks `ext-redis`, which `composer.json` requires as a hard dependency. This is safe only while runtime config never hard-depends on Redis — the shipped `.env.example` defaults (`DB_CONNECTION=sqlite`, `QUEUE_CONNECTION`/`SESSION_DRIVER`/`CACHE_STORE=database`) satisfy a first deploy without it; enable Redis via env when you want it.
+- **nginx `deny` patch** on `location ~ ^/storage/.*\.php$`: blocks serving or executing PHP files dropped under the `public/storage` symlink.
+
+`config/octane.php` is the published stock config — nothing in it is deployment-specific; supervisor passes `--server=frankenphp` explicitly, so the `OCTANE_SERVER` default (roadrunner) never takes effect in production.
+
+**Octane caveat:** workers are long-lived, so per-request state must not live in singletons.
 
 ---
 
