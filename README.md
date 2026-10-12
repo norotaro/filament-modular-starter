@@ -1,15 +1,15 @@
 # Modular Panels Starter
 
-**A modular Laravel 12 + Filament 5 application skeleton**
+**A modular Laravel 13 + Filament 5 application skeleton**
 
-[![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
+[![Laravel](https://img.shields.io/badge/Laravel-13-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.4-purple.svg)](https://php.net)
 
 ---
 
 ## Overview
 
-Modular Panels Starter is a Laravel 12 + Filament 5 architecture skeleton extracted from the production Teuka codebase, stripped of its domain and its tenancy layer. What survives is the part that was doing the real work: a runtime module system, a multi-panel Filament presentation layer, a contract-driven partner/integration layer, and the file-layout conventions that let a team grow the app without stepping on itself.
+Modular Panels Starter is a Laravel 13 + Filament 5 architecture skeleton extracted from the production Teuka codebase, stripped of its domain and its tenancy layer. What survives is the part that was doing the real work: a runtime module system, a multi-panel Filament presentation layer, a contract-driven partner/integration layer, and the file-layout conventions that let a team grow the app without stepping on itself.
 
 What is in the box:
 
@@ -29,18 +29,19 @@ Everything beyond this paragraph — the module system internals, where Filament
 
 Constraints are from `composer.json` / `package.json`.
 
-| Area | Package | Constraint |
-|------|---------|-----------|
-| Language | PHP | `^8.4` (with `ext-redis`) |
-| Framework | `laravel/framework` | `^12.0` |
-| Admin UI | `filament/filament` | `^5.0` |
-| Reactivity | `livewire/livewire` | transitive (via Filament) |
-| CSS | `tailwindcss` | `^4.1` |
-| Testing | `pestphp/pest` | `^4.0` |
-| Static analysis | `larastan/larastan` | `^3.0` |
-| Formatting | `laravel/pint` | `^1.24` |
-| Roles | `tightenco/parental` | `^1.4` |
-| Audit trail | `spatie/laravel-activitylog` | `^4.10` |
+| Area | Package | Constraint | Resolved |
+|------|---------|-----------|----------|
+| Language | PHP | `^8.4` (with `ext-redis`) | 8.4.23 |
+| Framework | `laravel/framework` | `^13.0` | 13.35.0 |
+| Admin UI | `filament/filament` | `^5.0` | 5.10.1 |
+| Reactivity | `livewire/livewire` | transitive (via Filament) | 4.4.7 |
+| CSS | `tailwindcss` | `^4.1` | 4.1.18 |
+| Testing | `pestphp/pest` | `^5.0` | 5.3.1 |
+| Test runner | `phpunit/phpunit` | transitive (via Pest) | 13.4.1 |
+| Static analysis | `larastan/larastan` | `^3.0` | 3.13.0 |
+| Formatting | `laravel/pint` | `^1.24` | 1.32.1 |
+| Roles | `tightenco/parental` | `^1.4` | 1.6.0 |
+| Audit trail | `spatie/laravel-activitylog` | `^5.0` | 5.1.1 |
 
 Node is pinned to 22 by `.nvmrc`; assets build with Vite (`laravel-vite-plugin`).
 
@@ -109,9 +110,9 @@ composer lint         # ./vendor/bin/pint --diff=main, then ./vendor/bin/phpstan
 
 ## 🧪 Testing
 
-Pest 4, two suites: `tests/Feature` and `tests/Unit` (`phpunit.xml`).
+Pest 5 (on PHPUnit 13), two suites: `tests/Feature` and `tests/Unit` (`phpunit.xml`).
 
-The suite runs on **in-memory sqlite** with a committed test-only `APP_KEY` — a deliberate departure from the production app it was extracted from (which required a local PostgreSQL). `composer test` works on a fresh clone with no `.env`, no database server, and no Redis.
+The suite runs on **in-memory sqlite** with a committed test-only `APP_KEY` — a deliberate departure from the production app it was extracted from (which required a local PostgreSQL). `composer test` works on a fresh clone with no `.env`, no database server, and no Redis. The repo commits a comment-only `.env.testing` anchor: with `APP_ENV=testing` (phpunit.xml), Laravel's env bootstrapper loads it instead of probing for an absent `.env`, whose suppressed read failure PHPUnit 13 would otherwise record as a warning on every booted test. Every test value still comes from phpunit.xml — keep the anchor comment-only.
 
 `phpunit.xml` also forces `APP_ENV=testing`, `CACHE_STORE=array`, `MAIL_MAILER=array`, `QUEUE_CONNECTION=sync`, and `SESSION_DRIVER=array`. Schema is per test: individual test files opt into `RefreshDatabase`/`LazilyRefreshDatabase` — it is not global in `tests/Pest.php`.
 
