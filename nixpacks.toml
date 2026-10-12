@@ -1,0 +1,238 @@
+[phases.setup]
+nixPkgs = ["...", "python311Packages.supervisor"]
+
+[phases.install]
+cacheDirectories = [
+    "/root/.npm", 
+    "/root/.cache/composer"
+]
+cmds = [
+    "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
+    "composer install --ignore-platform-reqs",
+    "NODE_ENV=development npm install --no-audit" 
+]
+
+[phases.build]
+cmds = [
+    "mkdir -p /etc/supervisor/conf.d/",
+    "cp /assets/worker-*.conf /etc/supervisor/conf.d/",
+    "cp /assets/supervisord.conf /etc/supervisord.conf",
+    "chmod +x /assets/start.sh",
+    "mkdir -p /etc/php/custom",
+    "cp /assets/php-custom.ini /etc/php/custom/custom.ini",
+    "php artisan octane:install --server=frankenphp --no-interaction",
+    "..."
+]
+
+[start]
+cmd = '/assets/start.sh'
+
+[staticAssets]
+"start.sh" = '''
+#!/bin/bash
+
+# Nix's php wrapper only applies its own PHP_INI_SCAN_DIR (which loads the
+# generated ini that enables iconv, mbstring, etc.) when the variable is
+# unset, so it cannot be overridden in the Dockerfile. Resolve it here and
+# append our custom ini dir instead. The merged value is exported once and
+# inherited by supervisord, so it reaches the php CLI and the embedded PHP
+# runtime inside FrankenPHP.
+NIX_PHP_INI_SCAN_DIR="$(php --ini | sed -n 's/^Scan for additional .ini files in: //p' | head -1)"
+if [ -z "$NIX_PHP_INI_SCAN_DIR" ]; then
+    echo "Could not resolve the Nix PHP extension scan dir" >&2
+    exit 1
+fi
+export PHP_INI_SCAN_DIR="$NIX_PHP_INI_SCAN_DIR:/etc/php/custom"
+
+# Transform the nginx configuration
+node /assets/scripts/prestart.mjs /assets/nginx.template.conf /etc/nginx.conf
+
+# Start supervisor
+supervisord -c /etc/supervisord.conf -n
+'''
+
+"php-custom.ini" = '''
+upload_max_filesize = 10M
+post_max_size = 12M
+'''
+
+"supervisord.conf" = '''
+[unix_http_server]
+file=/assets/supervisor.sock
+
+[supervisord]
+user=root
+logfile=/dev/stdout
+logfile_maxbytes=0
+loglevel=info
+pidfile=/assets/supervisord.pid
+nodaemon=false
+silent=false
+minfds=1024
+minprocs=200
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///assets/supervisor.sock
+
+[include]
+files = /etc/supervisor/conf.d/*.conf
+'''
+
+"worker-nginx.conf" = '''
+[program:worker-nginx]
+process_name=%(program_name)s_%(process_num)02d
+command=nginx -c /etc/nginx.conf
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+'''
+
+"worker-octane.conf" = '''
+[program:worker-octane]
+process_name=%(program_name)s_%(process_num)02d
+user=www-data
+group=www-data
+command=bash -c 'exec php /app/artisan octane:start --server=frankenphp --host=127.0.0.1 --port=8000 --workers=auto --max-requests=500'
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+'''
+
+"worker-laravel.conf" = '''
+[program:worker-laravel]
+process_name=%(program_name)s_%(process_num)02d
+user=www-data
+group=www-data
+command=bash -c 'exec php /app/artisan queue:work --sleep=30 --tries=3 --max-time=3600'
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+numprocs=1
+startsecs=0
+stopwaitsecs=3600
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+'''
+
+"worker-scheduler.conf" = '''
+[program:worker-scheduler]
+process_name=%(program_name)s_%(process_num)02d
+user=www-data
+group=www-data
+command=bash -c 'while true; do php /app/artisan schedule:run; sleep 60; done'
+autostart=true
+autorestart=true
+numprocs=1
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+'''
+
+"nginx.template.conf" = '''
+user www-data www-data;
+worker_processes 1;
+daemon off;
+
+worker_rlimit_nofile 8192;
+
+events {
+  worker_connections  4096;  # Default: 1024
+}
+
+http {
+    include    $!{nginx}/conf/mime.types;
+    index    index.html index.htm index.php;
+
+    default_type application/octet-stream;
+    log_format   main '$remote_addr - $remote_user [$time_local]  $status '
+        '"$request" $body_bytes_sent "$http_referer" '
+        '"$http_user_agent" "$http_x_forwarded_for"';
+    access_log /var/log/nginx-access.log;
+    error_log /var/log/nginx-error.log;
+    sendfile     on;
+    tcp_nopush   on;
+    server_names_hash_bucket_size 128; # this seems to be required for some vhosts
+
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
+    server {
+        listen ${PORT};
+        listen [::]:${PORT};
+        server_name localhost;
+
+        $if(NIXPACKS_PHP_ROOT_DIR) (
+            root ${NIXPACKS_PHP_ROOT_DIR};
+        ) else (
+            root /app/public;
+        )
+
+        add_header X-Content-Type-Options "nosniff";
+
+        client_max_body_size 35M;
+     
+        index index.php;
+     
+        charset utf-8;
+     
+        location /index.php {
+            try_files /not_exists @octane;
+        }
+
+        location / {
+            try_files $uri $uri/ @octane;
+        }
+     
+        location = /favicon.ico { access_log off; log_not_found off; }
+        location = /robots.txt  { access_log off; log_not_found off; }
+     
+        $if(IS_LARAVEL) (
+            error_page 404 /index.php;
+        ) else ()
+     
+        # --- INICIO DEL PARCHE DE SEGURIDAD ---
+        location ~ ^/storage/.*\.php$ {
+            deny all;
+        }
+        # --- FIN DEL PARCHE ---
+
+        location @octane {
+            set $suffix "";
+
+            if ($uri = /index.php) {
+                set $suffix ?$query_string;
+            }
+
+            proxy_http_version 1.1;
+            proxy_set_header Host $http_host;
+            proxy_set_header Scheme $scheme;
+            proxy_set_header SERVER_PORT $server_port;
+            proxy_set_header REMOTE_ADDR $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+
+            proxy_pass http://127.0.0.1:8000$suffix;
+        }
+     
+        location ~ /\.(?!well-known).* {
+            deny all;
+        }
+    }
+}
+'''
