@@ -2,6 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "norotaro/modular-panels-starter",
     "type": "project",
+    "license": "MIT",
     "description": "Laravel 13 + Filament 5 modular skeleton extracted from Teuka: runtime module system, multi-panel Filament architecture, partner integration layer, Spanish i18n convention. No domain logic, no tenancy.",
     "require": {
         "php": "^8.4",

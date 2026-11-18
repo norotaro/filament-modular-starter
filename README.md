@@ -163,6 +163,12 @@ The full rule set — the Parental inheritance chain and when to type-hint `Iden
 
 ---
 
+## 📄 License
+
+MIT. See [LICENSE](LICENSE).
+
+---
+
 <p align="center">
   <strong>A skeleton is only useful if you can boot it in five minutes. This one boots in four.</strong>
 </p>
