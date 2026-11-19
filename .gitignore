@@ -1,0 +1,43 @@
+*.log
+.DS_Store
+.env
+.env.backup
+.env.production
+# .env.testing is committed on purpose: comment-only anchor for the test
+# bootstrapper (see phpunit.xml). Add local overrides under a different name.
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/codegraph
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+Homestead.json
+Homestead.yaml
+Thumbs.db
+
+# Laravel Boost installs agent skills into `.agents/skills` (tracked, the cross-editor
+# standard) and mirrors them per editor. The tracked Boost files are that copy, boost.json
+# and the MCP entries in `.mcp.json` and `opencode.json`; the per-editor mirrors are
+# generated, and `php artisan boost:install --skills` recreates them.
+.claude/skills/
+.claude/settings.local.json
+.cursor/
+.junie/
+
+# Pest browser plugin failure and debug screenshots; a red browser test writes one per run.
+/tests/Browser/Screenshots
+
+# Octane FrankenPHP: generated worker script and the local server binary.
+/public/frankenphp-worker.php
+/frankenphp

@@ -1,0 +1,42 @@
+.git
+.github
+.dockerignore
+Dockerfile
+
+# Rebuilt inside the image; copying host artifacts would mask drift.
+node_modules
+vendor
+public/build
+public/hot
+bootstrap/cache/*.php
+
+# Environment comes from the platform, never from the build context.
+.env
+.env.*
+*.log
+storage/logs/*
+database/*.sqlite
+
+# Generated at build time; a local copy would hide a clean-checkout failure.
+public/frankenphp-worker.php
+
+# Development-only trees. `frankenphp` is the macOS binary a local
+# `octane:install` downloads: large, and it could shadow the base image's.
+tests
+frankenphp
+.agents
+.claude
+.cursor
+.junie
+.opencode
+.codegraph
+.mcp.json
+odd
+docs
+scripts
+AGENTS.md
+CLAUDE.md
+boost.json
+opencode.json
+codegraph.json
+.phpunit.result.cache

@@ -1,0 +1,70 @@
+# Site config for the Octane FrankenPHP server (see docker/worker-octane.conf).
+# The {$...} placeholders and the worker/global blocks are filled by
+# StartFrankenPhpCommand; their shape must stay in sync with
+# vendor/laravel/octane/src/Commands/stubs/Caddyfile. The matchers below add
+# the security rules a public deployment needs.
+
+{
+	{$CADDY_GLOBAL_OPTIONS}
+
+	admin {$CADDY_SERVER_ADMIN_HOST}:{$CADDY_SERVER_ADMIN_PORT}
+
+	frankenphp {
+		worker {
+			file "{$APP_PUBLIC_PATH}/frankenphp-worker.php"
+			{$CADDY_SERVER_WORKER_DIRECTIVE}
+			{$CADDY_SERVER_WATCH_DIRECTIVES}
+		}
+	}
+}
+
+{$CADDY_EXTRA_CONFIG}
+
+{$CADDY_SERVER_SERVER_NAME} {
+	log {
+		level {$CADDY_SERVER_LOG_LEVEL}
+
+		format filter {
+			wrap {$CADDY_SERVER_LOGGER}
+			fields {
+				request>uri query {
+					replace authorization REDACTED
+				}
+			}
+		}
+	}
+
+	# Leaves room above PHP's post_max_size (docker/php.ini), which stays the
+	# effective upload cap.
+	request_body {
+		max_size 35MB
+	}
+
+	header X-Content-Type-Options "nosniff"
+
+	@blocked {
+		path_regexp ^/\.
+		not path /.well-known/*
+	}
+
+	@php_in_storage {
+		path_regexp ^/storage/.*\.php$
+	}
+
+	route {
+		respond @blocked "Forbidden" 403
+		respond @php_in_storage "Forbidden" 403
+
+		root * "{$APP_PUBLIC_PATH}"
+		encode zstd br gzip
+
+		{$CADDY_SERVER_EXTRA_DIRECTIVES}
+
+		php_server {
+			index frankenphp-worker.php
+			try_files {path} frankenphp-worker.php
+			# public/storage is a symlink; without this, files under it 404.
+			resolve_root_symlink
+		}
+	}
+}
