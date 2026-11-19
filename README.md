@@ -32,12 +32,12 @@ Constraints are from `composer.json` / `package.json`.
 | Area | Package | Constraint | Resolved |
 |------|---------|-----------|----------|
 | Language | PHP | `^8.4` (with `ext-redis`) | 8.4.23 |
-| Framework | `laravel/framework` | `^13.0` | 13.35.0 |
+| Framework | `laravel/framework` | `^13.0` | 13.43.0 |
 | Admin UI | `filament/filament` | `^5.0` | 5.10.1 |
-| Reactivity | `livewire/livewire` | transitive (via Filament) | 4.4.7 |
+| Reactivity | `livewire/livewire` | transitive (via Filament) | 4.4.8 |
 | CSS | `tailwindcss` | `^4.1` | 4.1.18 |
-| Testing | `pestphp/pest` | `^5.0` | 5.3.1 |
-| Test runner | `phpunit/phpunit` | transitive (via Pest) | 13.4.1 |
+| Testing | `pestphp/pest` | `^5.0` | 5.3.7 |
+| Test runner | `phpunit/phpunit` | transitive (via Pest) | 13.4.7 |
 | Runtime | `laravel/octane` | `^2.21` | 2.21.0 |
 | Static analysis | `larastan/larastan` | `^3.0` | 3.13.0 |
 | Formatting | `laravel/pint` | `^1.24` | 1.32.1 |
