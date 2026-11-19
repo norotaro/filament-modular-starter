@@ -8,4 +8,8 @@ Conventions these files follow (the same rules `app/README.md` sets for module d
 - Document stable knowledge — boundaries, invariants, deliberate absences — not a folder inventory.
 - Code defects belong in the issue tracker, not in a README.
 
+Guides:
+
+- [Running on Postgres](postgres.md): switching development and the test suite from sqlite, and guarding the test database.
+
 The test suite enforces the citation rule: see `tests/Unit/Docs/CodeReferenceGuardTest.php`.
