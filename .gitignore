@@ -34,3 +34,6 @@ Thumbs.db
 .claude/settings.local.json
 .cursor/
 .junie/
+
+# Pest browser plugin failure and debug screenshots; a red browser test writes one per run.
+/tests/Browser/Screenshots

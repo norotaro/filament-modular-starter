@@ -129,7 +129,15 @@ composer lint         # ./vendor/bin/pint --diff=main, then ./vendor/bin/phpstan
 
 ## 🧪 Testing
 
-Pest 5 (on PHPUnit 13), two suites: `tests/Feature` and `tests/Unit` (`phpunit.xml`).
+Pest 5 (on PHPUnit 13). `phpunit.xml` declares two suites, `tests/Feature` and `tests/Unit`, which the default run covers; `tests/Browser` runs separately.
+
+`tests/Browser` drives the panels in a real headless Chromium through the [Pest browser plugin](https://pestphp.com/docs/browser-testing), because a test that calls a Livewire method directly stays green while the screen offers no button for it. It is left out of the default run (`composer test`, `vendor/bin/pest`) so a fresh clone tests without a browser. Run it with `composer test:browser` after a one-time setup: `npm ci`, `npm run build`, `npx playwright install chromium`. Failure screenshots land in `tests/Browser/Screenshots` (ignored).
+
+`tests/Helpers/browser.php` holds the shared steps; a browser test loads it with `require_once`:
+
+- `loginThroughPanel($user, 'admin' | 'super-admin')` signs in through the real login form and waits for the dashboard; `submitPanelLogin($panel, $email)` only submits the form, for rejection cases.
+- `waitForTextIn($page, $selector, $text)` polls until an element shows the text; prefer it to the plugin's `waitForText()`, which does not poll.
+- `allowBrowserUploads()` then `uploadThroughFilePond($page, $scope, $path)` attach a real file through a Filament file field; the docblocks explain the plugin quirks they work around.
 
 The suite runs on **in-memory sqlite** with a committed test-only `APP_KEY` — a deliberate departure from the production app it was extracted from (which required a local PostgreSQL). `composer test` works on a fresh clone with no `.env`, no database server, and no Redis. The repo commits a comment-only `.env.testing` anchor: with `APP_ENV=testing` (phpunit.xml), Laravel's env bootstrapper loads it instead of probing for an absent `.env`, whose suppressed read failure PHPUnit 13 would otherwise record as a warning on every booted test. Every test value still comes from phpunit.xml — keep the anchor comment-only.
 
@@ -139,6 +147,8 @@ The suite runs on **in-memory sqlite** with a committed test-only `APP_KEY` — 
 composer test
 php artisan test --testsuite=Feature
 php artisan test --filter=some_test_name
+composer test:browser                     # browser suite (setup above)
+vendor/bin/pest tests/Browser --headed    # watch a browser flow run
 ```
 
 ---

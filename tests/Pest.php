@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
-    ->in('Feature');
+    ->in('Feature', 'Browser');
 
 /*
 |--------------------------------------------------------------------------
@@ -27,3 +27,7 @@ pest()->extend(TestCase::class)
 | in-memory sqlite (phpunit.xml), so a fresh clone needs no database server.
 |
 */
+
+// Browser steps wait on Livewire round trips; under the parallel suite a
+// single step can outlast Playwright's 5s default without anything being wrong.
+pest()->browser()->timeout(10_000);
