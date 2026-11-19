@@ -29,6 +29,10 @@ The arrows are the *intended* direction: a panel composes module atoms and calls
 
 All panel providers extend the shared base `App\Modules\Core\Filament\PanelProvider`, which centralizes login, password reset, email verification, database notifications, the profile page (`Users\Filament\Pages\EditProfile`), and the `EnvironmentIndicatorPlugin` every panel gets. The per-user display timezone is registered once by `Users\UserServiceProvider`, not per panel.
 
+**Registration is a hand edit.** Nothing auto-discovers panel providers: the globs in [Provider auto-discovery](#provider-auto-discovery) walk `app/Modules` and `app/Partners`, never `app/Panels`. A new panel provider stays dead code until it is listed in `bootstrap/providers.php` beside `AdminPanelProvider` and `SuperAdminPanelProvider`. Forgetting that line fails silently: Filament never boots the panel, so it gets no routes and no `PanelID` mount. `tests/Unit/ArchitectureTest.php` fails when a panel provider is missing from that file, and when a module or partner provider is listed there by hand.
+
+Panels own no `Models/` directory and no migrations: they present state that modules own.
+
 Panel URLs, from each provider's `->path()`:
 
 | Panel | URL path | Declared in |
@@ -48,13 +52,15 @@ What follows is the **convention**, not an inventory — modules contain only wh
 - `Services/` + `Contracts/` — business logic behind interfaces. Consumers depend on the contract, never the concrete class.
 - `Database/` — `Migrations/`, `Factories/`, `Seeders/`. Migrations live inside the module and are loaded by its provider's `loadMigrationsFrom()`.
 - `Filament/` — reusable UI atoms (`Actions/`, `Schemas/`, `Schemas/Entries/`, `Tables/Columns/`) plus the module's panel plugins. See the [Filament Integration Guide](#filament-integration-guide) for what belongs here versus in a panel.
-- `Enums/`, `Policies/`, `Notifications/`, `Events/`, `Listeners/`, `Jobs/`, `Observers/`, `Rules/`, `DTOs/`, `Http/`, `Console/`, `Support/`, `Casts/`, `Mappers/` — as needed. The trait directory is `Concerns/`, **never** `Traits/`.
+- `Support/` — mechanism, not policy. Capabilities business logic *calls*: URL signing and routing (`Core\Support\RedirectUrlSigner`, `Route`), result envelopes (`Result`), the module registry (`Core\Support\Modules`). The dependency arrow is one-way: Services may call Support; Support never calls a Service or a Policy. The moment a class decides a business outcome (who, when, whether) it is policy and belongs in `Services/` or `Policies/`. The one exception is a **pure rule**: a function of plain values that reads no database, no container, no actor and no clock, and takes no value derived from them either, so a caller cannot smuggle the actor in as an argument. It lives here so it is unit-tested without a database, and the service that owns the verdict asks it; the actor, the row lock and the side effects stay in the service.
+- `Enums/`, `Policies/`, `Notifications/`, `Events/`, `Listeners/`, `Jobs/`, `Observers/`, `Rules/`, `DTOs/`, `Http/`, `Console/`, `Casts/`, `Mappers/` — as needed. The trait directory is `Concerns/`, **never** `Traits/`.
 - `routes/`, `lang/`, `resources/views/` — module-owned routes and translations, loaded by the provider via `loadRoutesFrom()`, `loadJsonTranslationsFrom()`, `loadViewsFrom()`. The root `routes/web.php` stays empty; every HTTP route comes from a module, a panel, or Filament.
+- **Only modules own models.** Every Eloquent model lives in a module's `Models/` namespace, and a `Models/` namespace holds nothing else. `tests/Unit/ArchitectureTest.php` enforces this, the Support rule above, class-name casing, provider file names, and the absence of `Repositories/` and `Traits/` directories.
 - **Factories resolve inside the module.** `Core\Concerns\HasModuleFactory` splits the model FQCN on `Models\` and looks for `{Module}\Database\Factories\{Model}Factory`. A model whose FQCN has no `Models\` segment yields a bogus path and a fatal — keep models under `Models/`.
 
 ### Partners
 
-`app/Partners/` is the outbound integration layer. Shared contracts live in `Interfaces/`, the identifying enum in `Enums/PartnerId.php`, and the domain-agnostic DTOs gateways are typed against in `Support/`. Each integration gets its own directory.
+`app/Partners/` is the outbound integration layer. It declares no `Models/` directory and no migrations: the outbound layer owns communication, not persisted state. Shared contracts live in `Interfaces/`, the identifying enum in `Enums/PartnerId.php`, and the domain-agnostic DTOs gateways are typed against in `Support/`. Each integration gets its own directory.
 
 The skeleton ships the payment-gateway contract family (`PaymentPartnerInterface`, `PaymentInitResultInterface`, `PaymentWebhookInterface`) and one reference implementation, `DummyPayments/`. Gateways are typed against `Partners\Support\PaymentIntent`, **not** a domain payment model — a payments module maps its record to an intent at the call site. Adding a gateway is a documented procedure: [Partner Gateway Development Guide](#partner-gateway-development-guide).
 
