@@ -25,3 +25,12 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Laravel Boost installs agent skills into `.agents/skills` (tracked, the cross-editor
+# standard) and mirrors them per editor. The tracked Boost files are that copy, boost.json
+# and the MCP entries in `.mcp.json` and `opencode.json`; the per-editor mirrors are
+# generated, and `php artisan boost:install --skills` recreates them.
+.claude/skills/
+.claude/settings.local.json
+.cursor/
+.junie/

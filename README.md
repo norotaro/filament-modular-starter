@@ -123,6 +123,10 @@ composer lint         # ./vendor/bin/pint --diff=main, then ./vendor/bin/phpstan
 
 ---
 
+### AI Tooling
+
+[Laravel Boost](https://laravel.com/docs/boost) is a dev dependency. `.mcp.json` and `opencode.json` register its MCP server (`php artisan boost:mcp`), and its agent skills live in `.agents/skills/`. Run `php artisan boost:install --skills` to regenerate the per-editor copies (`.claude/skills/`, `.cursor/`, `.junie/`), which stay out of git.
+
 ## 🧪 Testing
 
 Pest 5 (on PHPUnit 13), two suites: `tests/Feature` and `tests/Unit` (`phpunit.xml`).
