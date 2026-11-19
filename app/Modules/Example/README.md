@@ -13,6 +13,7 @@ Reference module that demonstrates every skeleton convention in one place: provi
 - **Two modules, two defaults.** `ModuleIdentifier::Example` is active unless `config('modules.example')` says otherwise; `ModuleIdentifier::Sample` is inactive unless `config('modules.sample')` enables it. That asymmetry makes both the active path and the fail-closed `module.active` 403 demonstrable without editing code. `ModuleScope::resolve()` returns `null` in the shipped skeleton — the default scope carries no context and no bypass, so it cannot decide until a tenant context is re-introduced (see the scoping section in [`../../README.md`](../../README.md)).
 - **Gating.** To guard a route: `Route::middleware('module.active:sample')`. The middleware is fail-closed — an unknown identifier aborts 403 with `'Module not active.'`, an inactive scope aborts 403 with `'Module not active for this context.'`.
 - **Module-local everything.** Migrations load via `loadMigrationsFrom()`, translations via `loadJsonTranslationsFrom()`. Factories resolve inside the module through `Core\Concerns\HasModuleFactory`, which requires models to live under `Models/` — a model outside a `Models\` segment yields a bogus factory path and a fatal.
+- **A localized column.** `ExampleItem::$tagline` is a JSON column keyed by locale: `Core\Casts\LocalizedArray` reads and writes the whole map, and `Core\Concerns\HasLocalizedFields::getTranslation()` picks the text to show. The display rule is Core's; see [`../Core/README.md`](../Core/README.md).
 
 ## Filament atom placement
 

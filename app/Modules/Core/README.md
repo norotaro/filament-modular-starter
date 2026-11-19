@@ -6,7 +6,7 @@ Foundational infrastructure every other module depends on: the runtime module sy
 
 The module system itself is documented once, in [`../../README.md`](../../README.md#module-system) — registry, definitions, scope, middleware and provider auto-discovery. **This file does not restate it.** What follows is the Core-specific precision that doc omits, plus the traps.
 
-Here: `Support/` (`Result`, `RedirectUrlSigner`, `Route`, and the module-system primitives under `Support/Modules/`), `Concerns/HasModuleFactory`, `Filament/PanelProvider` (the shared base all panels extend), `Middleware/EnsureModuleActive`, `Enums/`, `Exceptions/`, the framework migrations, and the default `en`/`es` lang directories plus a `Core/lang/es.json`.
+Here: `Support/` (`Result`, `RedirectUrlSigner`, `Route`, `LocalizedText`, and the module-system primitives under `Support/Modules/`), `Concerns/` (`HasModuleFactory`, `HasLocalizedFields`), `Casts/LocalizedArray`, `Filament/PanelProvider` (the shared base all panels extend), `Middleware/EnsureModuleActive`, `Enums/`, `Exceptions/`, the framework migrations, and the default `en`/`es` lang directories plus a `Core/lang/es.json`.
 
 Deliberately **not** here:
 
@@ -58,6 +58,7 @@ Mechanics are documented once in [`../../README.md`](../../README.md#signed-gues
 - **`Concerns/`, not `Traits/`.** The convention is repo-wide — Users uses `Filament/Concerns/` too if you add one.
 - **`HasModuleFactory` assumes the FQCN contains `Models\`.** A model outside a `Models\` segment yields the same string from both `Str::before()` and `Str::after()`, producing a bogus factory path and a fatal. This trait is what lets each module keep factories inside its own tree instead of `database/factories`.
 - **`FileType`'s backing values are MIME types, not extensions** — matching must compare MIME strings.
+- **A whitespace-only localized value is no text.** `Support\LocalizedText::resolve()` is the single display rule for localized JSON fields (`{"es": "…", "en": "…"}`): first chain locale holding text, else any stored locale with text, in stored order, else `''`. Callers own the chain; `HasLocalizedFields::getTranslation()` builds it from the requested locale and `config('app.fallback_locale')`, and delegates to the rule except with `useFallback: false`, which stays an exact read so a form edits what is stored. `Casts\LocalizedArray` is the cast for the same column shape and reads a null or non-object column as `[]`.
 - **`NoResultsFoundException` is the only class in `Exceptions/`** — throw it from a bulk-download-style service, catch it in the controller, declare it via `@throws` on the contract.
 - **`Result` has a private constructor** — only `success()` and `failure()` build one — and **`value()` throws `InvalidArgumentException('Cannot retrieve value from a failed result.')`** on a failure. `isSuccess()` / `isFailure()` carry `@phpstan-assert-if-true` annotations so the throw is statically unreachable after a guard.
 

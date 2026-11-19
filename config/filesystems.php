@@ -33,7 +33,10 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Never served by path: a signed /storage URL would hand out a private
+            // file without asking a policy. Send these files through an authorized
+            // controller that checks the policy before reading the bytes.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],
