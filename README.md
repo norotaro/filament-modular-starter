@@ -138,7 +138,7 @@ Coolify builds the image with Nixpacks, which reads `nixpacks.toml` at the repo 
 
 Two deliberate choices carried over from the source app:
 
-- **`composer install --ignore-platform-reqs`** in the install phase: the Nixpacks image lacks `ext-redis`, which `composer.json` requires as a hard dependency. This is safe only while runtime config never hard-depends on Redis — the shipped `.env.example` defaults (`DB_CONNECTION=sqlite`, `QUEUE_CONNECTION`/`SESSION_DRIVER`/`CACHE_STORE=database`) satisfy a first deploy without it; enable Redis via env when you want it.
+- **`composer install --no-dev --ignore-platform-reqs`** in the install phase. `--no-dev` keeps Pest, PHPStan and Faker out of the image, so `php artisan db:seed` does not run in production: the seeders use factories, which need Faker. `--ignore-platform-reqs`: the Nixpacks image lacks `ext-redis`, which `composer.json` requires as a hard dependency. This is safe only while runtime config never hard-depends on Redis — the shipped `.env.example` defaults (`DB_CONNECTION=sqlite`, `QUEUE_CONNECTION`/`SESSION_DRIVER`/`CACHE_STORE=database`) satisfy a first deploy without it; enable Redis via env when you want it.
 - **nginx `deny` patch** on `location ~ ^/storage/.*\.php$`: blocks serving or executing PHP files dropped under the `public/storage` symlink.
 
 `config/octane.php` is the published stock config — nothing in it is deployment-specific; supervisor passes `--server=frankenphp` explicitly, so the `OCTANE_SERVER` default (roadrunner) never takes effect in production.

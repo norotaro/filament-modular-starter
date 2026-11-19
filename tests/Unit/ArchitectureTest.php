@@ -55,7 +55,8 @@ foreach (glob(__DIR__.'/../../app/Modules/*/Models', GLOB_ONLYDIR) ?: [] as $pat
 if (! function_exists('moduleNamespacesWith')) {
     /**
      * The namespace of every module directory named $directory. Pest throws on a
-     * wildcard such as `App\Modules\*\Services` when no module has that     * directory, as in the bare starter, so arch rules take this list instead.
+     * wildcard such as `App\Modules\*\Services` when no module has that
+     * directory, as in the bare starter, so arch rules take this list instead.
      *
      * @return list<string>
      */
