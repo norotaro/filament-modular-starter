@@ -2,11 +2,8 @@
 
 namespace App\Panels\Commons;
 
-use App\Modules\Users\Enums\UserType;
-use App\Panels\Commons\Enums\PanelID;
-use Filament\Facades\Filament;
+use App\Panels\Commons\Auth\PanelUserProvider;
 use Filament\Support\Facades\FilamentColor;
-use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,20 +28,7 @@ class CommonServiceProvider extends ServiceProvider
      */
     private function registerAuthProviders(): void
     {
-        Auth::provider('eloquent-panel-user', function ($app, array $config) {
-            $provider = new EloquentUserProvider($app['hash'], $config['model']);
-
-            $panel = Filament::getCurrentPanel();
-            $panelId = PanelID::tryFrom($panel?->getId());
-
-            $provider->withQuery(fn ($query) => match ($panelId) {
-                PanelID::SuperAdmin => $query->where('type', UserType::SuperAdmin),
-                PanelID::Admin => $query->where('type', UserType::Admin),
-                default => $query,
-            });
-
-            return $provider;
-        });
+        Auth::provider('eloquent-panel-user', fn ($app, array $config) => new PanelUserProvider($app['hash'], $config['model']));
     }
 
     private function registerFilamentColors(): void

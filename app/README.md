@@ -40,7 +40,7 @@ Panel URLs, from each provider's `->path()`:
 | Admin | `admin` | `AdminPanelProvider` |
 | SuperAdmin | `super-admin` | `SuperAdminPanelProvider` |
 
-`Panels/Commons/` is this layer's shared drawer: the `PanelID` enum, the `eloquent-panel-user` auth driver that restricts sign-in per panel by user type, Filament color registration, and a small `routes/web.php` loaded by `CommonServiceProvider`. The original app also had a SuperAdmin panel on its own domain (`->domain()`) and two second-level panels keyed by an event-scoped route parameter; both were tenant mechanics that the skeleton deliberately does not carry.
+`Panels/Commons/` is this layer's shared drawer: the `PanelID` enum, the `eloquent-panel-user` auth driver (`Auth\PanelUserProvider`) that restricts every user lookup to the current panel's role, read per query, and finds nobody by credentials when no known panel is current, Filament color registration, and a small `routes/web.php` loaded by `CommonServiceProvider`. The original app also had a SuperAdmin panel on its own domain (`->domain()`) and two second-level panels keyed by an event-scoped route parameter; both were tenant mechanics that the skeleton deliberately does not carry.
 
 ### Modules
 
