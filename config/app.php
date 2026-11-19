@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Modular Panels Starter'),
+    'name' => env('APP_NAME', 'Filament Modular Starter'),
 
     /*
     |--------------------------------------------------------------------------

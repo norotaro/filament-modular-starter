@@ -1,4 +1,4 @@
-# Modular Panels Starter
+# Filament Modular Starter
 
 **A modular Laravel 13 + Filament 5 application skeleton**
 
@@ -9,7 +9,7 @@
 
 ## Overview
 
-Modular Panels Starter is a Laravel 13 + Filament 5 architecture skeleton extracted from the production Teuka codebase, stripped of its domain and its tenancy layer. What survives is the part that was doing the real work: a runtime module system, a multi-panel Filament presentation layer, a contract-driven partner/integration layer, and the file-layout conventions that let a team grow the app without stepping on itself.
+Filament Modular Starter is a Laravel 13 + Filament 5 architecture skeleton extracted from the production Teuka codebase, stripped of its domain and its tenancy layer. What survives is the part that was doing the real work: a runtime module system, a multi-panel Filament presentation layer, a contract-driven partner/integration layer, and the file-layout conventions that let a team grow the app without stepping on itself.
 
 What is in the box:
 
@@ -31,7 +31,7 @@ Constraints are from `composer.json` / `package.json`.
 
 | Area | Package | Constraint | Resolved |
 |------|---------|-----------|----------|
-| Language | PHP | `^8.4` (with `ext-redis`) | 8.4.23 |
+| Language | PHP | `^8.4` | 8.4.23 |
 | Framework | `laravel/framework` | `^13.0` | 13.43.0 |
 | Admin UI | `filament/filament` | `^5.0` | 5.10.1 |
 | Reactivity | `livewire/livewire` | transitive (via Filament) | 4.4.8 |
@@ -46,18 +46,32 @@ Constraints are from `composer.json` / `package.json`.
 
 Node is pinned to 22 by `.nvmrc`; assets build with Vite (`laravel-vite-plugin`).
 
-**Hard runtime requirement:** `ext-redis` is a `require` entry in `composer.json` — `composer install` fails without it. It is inherited from the production stack; `predis/predis` is also installed so you can drop the extension requirement if you never run Redis.
+**Redis is optional.** Nothing in the shipped code uses it: queues, sessions and cache run on the database. When you turn Redis on, `predis/predis` is the default client (`REDIS_CLIENT=predis`); install `ext-redis` and set `REDIS_CLIENT=phpredis` for the faster native client.
 
 **Primary keys:** bigint auto-increment on `users` and `example_items`. UUID/ULID strategies belong to domain models that were removed — pick per aggregate when you add them.
 
 ---
 
-## 🚀 Using This as a Template
+## 🚀 Create a New App
 
-Create a new project from this repo, then rename the identity to match it:
+With the [Laravel installer](https://laravel.com/docs/installation):
 
 ```bash
-gh repo create my-project -p norotaro/modular-panels-starter --clone
+laravel new my-app --using=norotaro/filament-modular-starter
+```
+
+Or with Composer alone:
+
+```bash
+composer create-project norotaro/filament-modular-starter my-app
+```
+
+Either way, Composer copies `.env.example` to `.env`, generates the app key, creates `database/database.sqlite` and runs the migrations. Then:
+
+```bash
+cd my-app
+npm install && npm run build
+composer dev
 ```
 
 Rename checklist: `composer.json` (`name`/`description`), `package-lock.json` (`name`), the `config/app.php` default app name, `APP_NAME`/`DB_DATABASE` in `.env.example` and `.env`, and this README's title and intro. Then build your first module by copying `app/Modules/Example/` — do **not** add its provider to `bootstrap/providers.php`; the Core glob auto-discovers it. Tenancy (per-context module enablement, tenant routes) is intentionally absent; wire it back through `ModuleScope::forContext()` and `ModuleDefinition::$applicabilityCheck` only if your project needs it.
@@ -138,7 +152,7 @@ Coolify builds the image with Nixpacks, which reads `nixpacks.toml` at the repo 
 
 Two deliberate choices carried over from the source app:
 
-- **`composer install --no-dev --ignore-platform-reqs`** in the install phase. `--no-dev` keeps Pest, PHPStan and Faker out of the image, so `php artisan db:seed` does not run in production: the seeders use factories, which need Faker. `--ignore-platform-reqs`: the Nixpacks image lacks `ext-redis`, which `composer.json` requires as a hard dependency. This is safe only while runtime config never hard-depends on Redis — the shipped `.env.example` defaults (`DB_CONNECTION=sqlite`, `QUEUE_CONNECTION`/`SESSION_DRIVER`/`CACHE_STORE=database`) satisfy a first deploy without it; enable Redis via env when you want it.
+- **`composer install --no-dev --ignore-platform-reqs`** in the install phase. `--no-dev` keeps Pest, PHPStan and Faker out of the image, so `php artisan db:seed` does not run in production: the seeders use factories, which need Faker. `--ignore-platform-reqs` is kept from the source app's deploy, where it covered a hard `ext-redis` requirement that no longer exists; the image's PHP extensions have not been checked against the lock file, so drop the flag only after a test deploy.
 - **nginx `deny` patch** on `location ~ ^/storage/.*\.php$`: blocks serving or executing PHP files dropped under the `public/storage` symlink.
 
 `config/octane.php` is the published stock config — nothing in it is deployment-specific; supervisor passes `--server=frankenphp` explicitly, so the `OCTANE_SERVER` default (roadrunner) never takes effect in production.

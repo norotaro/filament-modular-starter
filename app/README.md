@@ -246,6 +246,6 @@ A gateway with no external redirect returns an empty string — see `DummyPaymen
 
 ## Runtime Prerequisites
 
-- **Redis**: `ext-redis` is a hard requirement in `composer.json` — inherited from the production stack the skeleton was extracted from, not used by any shipped code path. `predis/predis` is present so the requirement can be dropped if you never run Redis.
+- **Redis**: optional and unused by shipped code. `predis/predis` is the default client; `ext-redis` is only a `suggest` entry.
 - **Queue worker**: `QUEUE_CONNECTION=database`, so jobs sit in the database until a worker picks them up. Locally `composer dev` starts one via `php artisan queue:listen --tries=1`.
 - **Sessions/cache**: `SESSION_DRIVER=database`, `CACHE_STORE=database` — the tables come from Core's framework migrations.
