@@ -44,6 +44,7 @@ Mechanics are documented once in [`../../README.md`](../../README.md#signed-gues
 - **Do not confuse it with `Route::toPanelSignedRoute()`**, which wraps `URL::temporarySignedRoute($routeName, now()->addDays(2), $params)`. That 2-day TTL is a separate Laravel-native mechanism.
 - `append(string $url, string $panelUrl)` **signs `$panelUrl` but appends to `$url`** — the two arguments are not interchangeable.
 - `verify()` uses **strict** `base64_decode(..., true)` and `hash_equals()`, so it is timing-safe. The key is injectable for tests and defaults to `Config::get('app.key')`.
+- **An empty key is refused at construction** (`InvalidArgumentException`): a blank explicit key, or a null key resolving to an empty `app.key`, throws instead of signing with an HMAC key anyone can recompute.
 - `Route::toPanelRoute()` / `toPanelSignedRoute()` accept an optional bare domain and pin the generated URL's origin via `URL::useOrigin`, restoring it in a `finally`. That is the hook point for a future per-tenant domain table; the skeleton passes no domain and gets `app.url`-based absolute URLs.
 
 ## Traps and intentional oddities

@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Support;
 
 use Illuminate\Support\Facades\Config;
+use InvalidArgumentException;
 
 /**
  * Signs and verifies panel redirect URLs for guest authentication recovery.
@@ -14,6 +15,9 @@ use Illuminate\Support\Facades\Config;
  * needing to enumerate allowed domains or query the database.
  *
  * Token format: "<base64(url)>.<hex(hmac-sha256(url, app.key))>"
+ *
+ * The key is mandatory: an HMAC with an empty key is one anyone can recompute,
+ * so a blank key fails construction instead of producing forgeable tokens.
  */
 final readonly class RedirectUrlSigner
 {
@@ -23,7 +27,15 @@ final readonly class RedirectUrlSigner
 
     public function __construct(?string $key = null, string $parameter = 'r')
     {
-        $this->key = $key ?? (string) Config::get('app.key');
+        $key ??= (string) Config::get('app.key');
+
+        if (trim($key) === '') {
+            throw new InvalidArgumentException(
+                'RedirectUrlSigner requires a non-empty HMAC key; an empty key makes signatures forgeable.',
+            );
+        }
+
+        $this->key = $key;
         $this->parameter = $parameter;
     }
 

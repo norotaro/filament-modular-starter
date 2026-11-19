@@ -1,6 +1,9 @@
 <?php
 
 use App\Modules\Core\Support\RedirectUrlSigner;
+use Tests\TestCase;
+
+uses(TestCase::class);
 
 describe('RedirectUrlSigner', function () {
     it('returns the sign URL with token appended', function () {
@@ -89,5 +92,16 @@ describe('RedirectUrlSigner', function () {
         parse_str((string) $query, $params);
 
         expect($signer->verify($params['r'] ?? null))->toBe($panelLoginUrl);
+    });
+
+    it('refuses an empty or blank explicit key', function () {
+        expect(fn () => new RedirectUrlSigner(''))->toThrow(InvalidArgumentException::class, 'non-empty');
+        expect(fn () => new RedirectUrlSigner('   '))->toThrow(InvalidArgumentException::class, 'non-empty');
+    });
+
+    it('refuses to fall back to an empty app.key', function () {
+        config()->set('app.key', '');
+
+        expect(fn () => new RedirectUrlSigner)->toThrow(InvalidArgumentException::class, 'non-empty');
     });
 });
