@@ -41,11 +41,11 @@ Aliased as `module.active` in `CoreServiceProvider`. `handle()` takes the identi
 Mechanics are documented once in [`../../README.md`](../../README.md#signed-guest-redirects). The Core-specific facts:
 
 - **It has NO TTL.** A signature is valid **forever** for a given `APP_KEY`, and rotating `APP_KEY` invalidates every previously issued link — after which the guest-redirect closure silently degrades to `config('app.url')` rather than erroring. **Do not document a TTL for this class.**
-- **Do not confuse it with `Route::toPanelSignedRoute()`**, which wraps `URL::temporarySignedRoute($routeName, now()->addDays(2), $params)`. That 2-day TTL is a separate Laravel-native mechanism.
+- **Do not confuse it with `Route::toPanelSignedRoute()`**, which wraps `URL::temporarySignedRoute()` with a 2-day TTL by default (`$expiresAt` overrides it). That TTL is a separate Laravel-native mechanism.
 - `append(string $url, string $panelUrl)` **signs `$panelUrl` but appends to `$url`** — the two arguments are not interchangeable.
 - `verify()` uses **strict** `base64_decode(..., true)` and `hash_equals()`, so it is timing-safe. The key is injectable for tests and defaults to `Config::get('app.key')`.
 - **An empty key is refused at construction** (`InvalidArgumentException`): a blank explicit key, or a null key resolving to an empty `app.key`, throws instead of signing with an HMAC key anyone can recompute.
-- `Route::toPanelRoute()` / `toPanelSignedRoute()` accept an optional bare domain and pin the generated URL's origin via `URL::useOrigin`, restoring it in a `finally`. That is the hook point for a future per-tenant domain table; the skeleton passes no domain and gets `app.url`-based absolute URLs.
+- `Route::toPanelRoute()` / `toPanelSignedRoute()` accept an optional bare domain and pin the generated URL to that domain's https origin on a clone of the URL generator, so the shared generator is never left forced to that domain. `toPanelSignedRoute()` takes an optional `$expiresAt` and refuses to sign with an empty `app.key`. That is the hook point for a future per-tenant domain table; the skeleton passes no domain and gets `app.url`-based absolute URLs.
 
 ## Traps and intentional oddities
 
