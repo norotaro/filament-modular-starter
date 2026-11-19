@@ -9,9 +9,14 @@ set -euo pipefail
 
 scan=${1:-}
 base=${2:-main}
+# A fresh clone has origin/main but no local main.
+if [[ $# -lt 2 ]] && ! git rev-parse --verify --quiet main >/dev/null; then
+  base=origin/main
+fi
 
 diff_against_base() {
-  git diff "${base}...HEAD" -U0 -- ':(exclude)*.md'
+  # This script's own regexes would match the comment scan.
+  git diff "${base}...HEAD" -U0 -- ':(exclude)*.md' ':(exclude)scripts/review-scans.sh'
 }
 
 case "$scan" in

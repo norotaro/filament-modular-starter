@@ -33,6 +33,7 @@ GIT_DANGEROUS_LONG="output open-files-in-pager ext-diff no-index textconv"
 git_option_ok() {
   local sub=$1 word=$2 name danger
   case "$word" in
+    --) ;;
     --*)
       name=${word#--}
       name=${name%%=*}
@@ -56,7 +57,11 @@ test_option_ok() {
 
 pint_option_ok() {
   case "$1" in
-    --test | --diff=* | --dirty) return 0 ;;
+    --test | --dirty) return 0 ;;
+    # Pint hands the value to git as <value>...HEAD, so an option-shaped value
+    # becomes a git option.
+    --diff=-*) return 1 ;;
+    --diff=*) return 0 ;;
     app/* | tests/* | config/* | routes/* | database/*) [[ $1 != *..* ]] && return 0 ;;
   esac
   return 1
@@ -79,6 +84,16 @@ check() {
 
   local -a w
   read -r -a w <<<"$cmd"
+
+  # Paths must stay inside the repository: git diff given an outside path
+  # switches to --no-index on its own, and option values such as -f<file> or
+  # --diff=<value> reach files too. Ref ranges like main...HEAD stay allowed.
+  for word in "${w[@]}"; do
+    if [[ $word =~ (^|[=:]|^-[A-Za-z]*)[/~] || $word =~ (^|/|=)\.\.(/|$) ]]; then
+      problem="a path outside the repository in $word"
+      return 1
+    fi
+  done
 
   case "${w[0]} ${w[1]:-}" in
     "git status" | "git diff" | "git log" | "git show" | "git grep" | "git ls-files")
