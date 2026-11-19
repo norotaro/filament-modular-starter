@@ -16,9 +16,30 @@ permission:
     "git ls-files*": allow
     "composer test*": allow
     "php artisan test*": allow
-    "composer lint*": allow
+    "vendor/bin/pint --test*": allow
+    "scripts/review-scans.sh *": allow
     "vendor/bin/pest*": allow
     "vendor/bin/phpstan*": allow
+    "*|*": deny
+    "*;*": deny
+    "*&*": deny
+    "*>*": deny
+    "*<*": deny
+    "*`*": deny
+    "*$(*": deny
+    "git difftool*": deny
+    "*--output*": deny
+    "*--open*": deny
+    "*--ext-diff*": deny
+    "*--no-index*": deny
+    "*--textconv*": deny
+    "git grep*-O*": deny
+    "git grep*-*O*": deny
+    "*--bootstrap*": deny
+    "*--configuration*": deny
+    "*--autoload-file*": deny
+    "vendor/bin/pest* -c*": deny
+    "vendor/bin/phpstan* -c*": deny
 ---
 
 You are one read-only lens of a pre-PR review. Return one verdict for your lens only. Never delegate, never orchestrate, never modify files.

@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# Mirrors the command list of .opencode/agents/*.md: Claude Code frontmatter
-# takes tool names only, so per-command rules need this hook. Keep both command
-# lists in sync.
-# The scans published in AGENTS.md pipe git diff into awk, so a pipeline into
-# read-only filters is allowed; chaining, redirection and substitution are not.
+# Keeps the pre-PR reviewer agents read-only. Claude Code frontmatter takes tool
+# names only, so per-command rules need this hook; .opencode/agents/*.md carry
+# the same command list as permission globs. Keep both lists in sync.
+#
+# Allowlist by construction, not by parsing shell: a command may only contain
+# the characters below, so quotes, escapes, comments, pipes, redirection,
+# substitution and chaining cannot appear at all, and the words can be split on
+# spaces safely. Each allowed command then gets its options checked, because
+# git, pest and phpstan all have options that write files or run code.
+#
 # Deny, not ask: a hook's "ask" prompts even under bypass mode and stalls a
 # background reviewer until a human answers; a denial with a reason lets the
 # reviewer switch to git grep and Read on its own.
@@ -15,89 +20,105 @@ command -v jq >/dev/null 2>&1 || {
   exit 2
 }
 
-cmd=$(jq -r '.tool_input.command // ""')
+# The sentinel keeps trailing newlines, which command substitution would strip.
+cmd=$(jq -r '(.tool_input.command // "") + "#"')
+cmd=${cmd%#}
+problem=""
 
-deny_reason=""
+# Long options git accepts in abbreviated form that write files, run commands,
+# or read outside the repository. A word is refused when it spells any prefix
+# of one of these, because git expands unambiguous prefixes.
+GIT_DANGEROUS_LONG="output open-files-in-pager ext-diff no-index textconv"
 
-# Splits $cmd into pipeline segments, honoring quotes. A prefix check alone would
-# let "git diff; rm -rf ." through, so anything that chains, redirects or
-# substitutes outside single quotes is refused before the segments are matched.
-segments=()
-check_syntax() {
-  local i ch next prev="" quote="" seg=""
-  for ((i = 0; i < ${#cmd}; i++)); do
-    ch=${cmd:i:1}
-    next=${cmd:i+1:1}
-    if [[ $quote == "'" ]]; then
-      [[ $ch == "'" ]] && quote=""
-      seg+=$ch
-      continue
-    fi
-    if [[ $quote == '"' ]]; then
-      if [[ $ch == '`' || ( $ch == '$' && $next == '(' ) ]]; then
-        deny_reason="command substitution"; return 1
+git_option_ok() {
+  local sub=$1 word=$2 name danger
+  case "$word" in
+    --*)
+      name=${word#--}
+      name=${name%%=*}
+      for danger in $GIT_DANGEROUS_LONG; do
+        [[ $danger == "$name"* ]] && return 1
+      done ;;
+    -*)
+      # git grep -O<cmd> runs a pager command, also inside grouped short options.
+      [[ $sub == grep && $word == *O* ]] && return 1 ;;
+  esac
+  return 0
+}
+
+test_option_ok() {
+  case "$1" in
+    --compact | --parallel | --filter=* | --testsuite=*) return 0 ;;
+    tests/*) [[ $1 != *..* ]] && return 0 ;;
+  esac
+  return 1
+}
+
+pint_option_ok() {
+  case "$1" in
+    --test | --diff=* | --dirty) return 0 ;;
+    app/* | tests/* | config/* | routes/* | database/*) [[ $1 != *..* ]] && return 0 ;;
+  esac
+  return 1
+}
+
+phpstan_option_ok() {
+  case "$1" in
+    analyse | --no-progress | --memory-limit=* | --error-format=*) return 0 ;;
+    app/* | tests/*) [[ $1 != *..* ]] && return 0 ;;
+  esac
+  return 1
+}
+
+check() {
+  local word
+  if [[ -z $cmd || ! $cmd =~ ^[A-Za-z0-9\ _./:@^~=,+%-]+$ ]]; then
+    problem="characters outside letters, digits, spaces and _ . / : @ ^ ~ = , + % -"
+    return 1
+  fi
+
+  local -a w
+  read -r -a w <<<"$cmd"
+
+  case "${w[0]} ${w[1]:-}" in
+    "git status" | "git diff" | "git log" | "git show" | "git grep" | "git ls-files")
+      for word in "${w[@]:2}"; do
+        git_option_ok "${w[1]}" "$word" || { problem="git option $word"; return 1; }
+      done ;;
+    "vendor/bin/pest "* | "php artisan")
+      local start=1
+      if [[ ${w[0]} == php ]]; then
+        [[ ${w[2]:-} == test ]] || { problem="php artisan other than test"; return 1; }
+        start=3
       fi
-      [[ $ch == '"' ]] && quote=""
-      seg+=$ch
-      continue
-    fi
-    case $ch in
-      "'" | '"') quote=$ch; seg+=$ch ;;
-      ';' | '&' | '>' | '<' | '`') deny_reason="'$ch' outside quotes"; return 1 ;;
-      '$')
-        if [[ $next == '(' ]]; then deny_reason="command substitution"; return 1; fi
-        seg+=$ch ;;
-      '|')
-        if [[ $next == '|' ]]; then deny_reason="'||' outside quotes"; return 1; fi
-        segments+=("$seg"); seg="" ;;
-      $'\n')
-        # A pipeline may continue on the next line only after '|' or '\'.
-        if [[ $prev != '|' && $prev != '\' ]]; then deny_reason="a second command on a new line"; return 1; fi
-        seg+=' ' ;;
-      *) seg+=$ch ;;
-    esac
-    [[ $ch != ' ' && $ch != $'\t' ]] && prev=$ch
-  done
-  if [[ -n $quote ]]; then deny_reason="an unclosed quote"; return 1; fi
-  segments+=("$seg")
+      for word in "${w[@]:start}"; do
+        test_option_ok "$word" || { problem="test option $word"; return 1; }
+      done ;;
+    "composer test")
+      [[ ${#w[@]} -eq 2 ]] || { problem="arguments to composer test"; return 1; } ;;
+    "vendor/bin/phpstan "*)
+      for word in "${w[@]:1}"; do
+        phpstan_option_ok "$word" || { problem="phpstan option $word"; return 1; }
+      done ;;
+    "vendor/bin/pint --test")
+      # Without --test pint rewrites files.
+      for word in "${w[@]:2}"; do
+        pint_option_ok "$word" || { problem="pint option $word"; return 1; }
+      done ;;
+    "scripts/review-scans.sh placement" | "scripts/review-scans.sh comments")
+      [[ ${#w[@]} -le 3 && ${w[2]:-x} != -* ]] || { problem="review-scans takes one base ref"; return 1; } ;;
+    *)
+      problem="a command outside the allowlist"
+      return 1 ;;
+  esac
 }
 
-trim() { local s=$1; s=${s#"${s%%[![:space:]]*}"}; printf '%s' "${s%"${s##*[![:space:]]}"}"; }
-
-check_segments() {
-  local first=1 seg
-  for seg in "${segments[@]}"; do
-    seg=$(trim "$seg")
-    if ((first)); then
-      first=0
-      case "$seg" in
-        "git status"* | "git diff"* | "git log"* | "git show"* | "git grep"* | "git ls-files"* | \
-        "composer test"* | "php artisan test"* | "composer lint"* | "vendor/bin/pest"* | "vendor/bin/phpstan"*) ;;
-        *) deny_reason="a command outside the allowlist"; return 1 ;;
-      esac
-      # git can write files (--output) or run a pager command (-O).
-      case " $seg" in
-        *" --output"* | *" -O"* | *" --open-files-in-pager"* | *" --ext-diff"*) deny_reason="a git option that writes or runs commands"; return 1 ;;
-      esac
-    else
-      case "$seg" in
-        grep* | sort* | uniq* | wc* | head* | tail* | cut* | tr*) ;;
-        awk*)
-          case "$seg" in
-            *system* | *getline* | *'print >'* | *'printf >'* | *'| "'* | *'|"'*) deny_reason="an awk program that runs commands or writes files"; return 1 ;;
-          esac ;;
-        *) deny_reason="a pipe into something other than grep, awk, sort, uniq, wc, head, tail, cut or tr"; return 1 ;;
-      esac
-    fi
-  done
-}
-
-if check_syntax && check_segments; then
+if check; then
   decision=allow
   reason="pre-pr-review bash allowlist"
 else
   decision=deny
-  reason="Refused: ${deny_reason}. Allowed: one git status/diff/log/show/grep/ls-files, composer test/lint, php artisan test, vendor/bin/pest or vendor/bin/phpstan command, optionally piped into grep, awk, sort, uniq, wc, head, tail, cut or tr. Search with git grep, list files with git ls-files, read with the Read tool."
+  reason="Refused: ${problem}. Allowed: git status/diff/log/show/grep/ls-files, composer test, php artisan test or vendor/bin/pest (--compact, --parallel, --filter=, --testsuite=, tests/ paths), vendor/bin/phpstan analyse, vendor/bin/pint --test, and scripts/review-scans.sh placement|comments [base-ref]. No pipes, quotes or redirection: search with git grep, list files with git ls-files, read with the Read tool."
 fi
 
 jq -n --arg d "$decision" --arg r "$reason" '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: $d, permissionDecisionReason: $r}}'

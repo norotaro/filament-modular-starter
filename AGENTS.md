@@ -23,14 +23,7 @@ These bind what you write. They extend `app/README.md`, `### Modules` and `## Fi
 - **Presentation mapping is a module seam**: `{Module}/Mappers/` for the shape a view reads, `{Module}/DTOs/` when a mapped value crosses a boundary, never an inline body in a controller.
 - **A model holds state, not policy.** Read predicates over its own loaded state stay on the model; a verdict, or an existence read across other rows, goes to `Policies/` or a service. Framework-required methods such as `FilamentUser::canAccessPanel()` are exempt by name.
 - Existing code that predates a rule stands; there is no scrub pass. Cleaning up around a change you are already making is welcome.
-- One mechanical scan, so writer and reviewer run the identical command. Set `BASE` to the review base ref:
-
-  ```bash
-  git diff "${BASE:-main}"...HEAD -U0 -- ':(exclude)*.md' |
-    awk '
-      /^\+\+\+ b\// { p = substr($0, 7); m = (index(p, "app/Modules/") == 1); c = (m && index(p, "/Http/Controllers/") > 0); mo = (m && index(p, "/Models/") > 0); f = (c || mo || (m && index(p, "/Filament/") > 0)) ? p : "" }
-      f && /^\+/ && !/^\+\+\+/ && !/^\+[ \t]*([*]|\/)/ && ( /Gate::|::forUser\(/ || (c && /(^|[^A-Za-z0-9_>])app\(/) ) { print f ": " $0 }'
-  ```
+- One mechanical scan, so writer and reviewer run the identical command, `scripts/review-scans.sh placement [base-ref]` (base defaults to `main`):
 
   `Gate::` and `::forUser(` are hunted in module `Filament/`, `Http/Controllers/` and `Models/`, because a verdict is never the body of an atom, a controller, or a record class. `app(` is hunted only in `Http/Controllers/`: the container always builds a controller, while the same token is unavoidable in a Filament atom or a Livewire page. Comment-only lines are skipped; a token in a trailing comment on a code line is still reported and needs a stated dismissal. The path tests use `index()` because a `/` inside a bracket class does not parse under every awk.
 
@@ -45,17 +38,7 @@ These bind what you write. They extend `app/README.md`, `### Modules` and `## Fi
 - Don't add docblocks or type annotations to code you did not change. Remove dead code rather than commenting it out.
 - Living docs never cite code by line number; `tests/Unit/Docs/CodeReferenceGuardTest.php` fails on such citations. Cite by symbol name.
 - The rule binds added and rewritten lines, not the whole repo. A copied sentence that carries a provenance id counts as new text.
-- One mechanical scan for the provenance class. Set `BASE` to the review base ref:
-
-  ```bash
-  git diff "${BASE:-main}"...HEAD -U0 -- ':(exclude)*.md' |
-    awk '
-      /^\+\+\+ b\// { f = substr($0, 7) }
-      /^\+/ && !/^\+\+\+/ && !/TODO\(task/ && !/UNMOUNTED:/ &&
-      /task [0-9]+\.[0-9]+|PR-[0-9]|PR #[0-9]|[Rr]ound-[0-9]|finding #[0-9A-Z][0-9A-Z-]*|session [0-9a-f]{8,}|in this batch/ {
-        print f ": " $0
-      }'
-  ```
+- One mechanical scan for the provenance class, `scripts/review-scans.sh comments [base-ref]`:
 
   It reports added non-Markdown lines only and passes the two marker shapes. It cannot see provenance with no id shape ("as reviewed", "verified green"), an external spec id, or anything in Markdown; those stay reviewer judgment.
 - Delegated writers receive this section in their prompt, run the scan on their own diff before returning, and check by hand for the smells no grep sees: a comment that restates the code, a paragraph that should be a `{@see}` pointer, and a citation of an id from outside the repo.
@@ -89,7 +72,7 @@ Before a push or pull request, a read-only reviewer pass runs against the exact 
 - Authored lines are additions plus deletions of bytes someone wrote. Exclude lockfiles (`composer.lock`, `package-lock.json`), `vendor/`, `public/build`, generated agent-skill copies (`.agents/skills/`), and anything an installer or generator emits.
 - Mechanical evidence is gathered once, by the caller: run the suite, `composer lint`, and the comment and placement scans above on the exact HEAD under review, and paste their output into every reviewer prompt. A reviewer that receives that output uses it instead of re-running it.
 - Each reviewer runs on the model its agent file pins: `review-risk` on `opus`, because a missed permission or data leak is the costliest miss; `pre-pr-review` and the other lenses on `sonnet`. The OpenCode agents pin no model and use the session's.
-- Reviewers are read-only. In Claude Code, `.claude/hooks/pre-pr-review-bash.sh` denies any Bash command outside an allowlist (git status/diff/log/show/grep/ls-files, composer test/lint, php artisan test, vendor/bin/pest, vendor/bin/phpstan), optionally piped into grep, awk, sort, uniq, wc, head, tail, cut or tr. It also refuses chaining (`;`, `&&`, `||`), redirection and command substitution, and awk programs that call `system` or write files. The OpenCode agents carry the same command list as permission globs, which match on how a command starts. Keep the two command lists in sync.
+- Reviewers are read-only. In Claude Code, `.claude/hooks/pre-pr-review-bash.sh` allows only `git status`/`diff`/`log`/`show`/`grep`/`ls-files`, `composer test`, `php artisan test` and `vendor/bin/pest` with test-selection options, `vendor/bin/phpstan analyse`, `vendor/bin/pint --test`, and `scripts/review-scans.sh`. Commands may not contain quotes, pipes, redirection or substitution, and git, pest, phpstan and pint options that write files or run code are refused. The OpenCode agents carry the same commands as permission globs plus deny globs for those options; globs cannot catch abbreviated git options such as `--ou=`, so the Claude Code hook is the stricter of the two. Keep the two lists in sync.
 - Documentation-only change: one `pre-pr-review` pass that checks the claims against the code.
 - A rebase or amend that changes the reviewed bytes requires a new review; an approve does not carry over. Agent-instruction files are never exempt, because their prose is runtime behavior.
 - BLOCKER or CRITICAL findings introduced by the change stop the push. WARNING and SUGGESTION findings become follow-ups. A correction commit that only answers findings gets one `pre-pr-review` pass over that delta.

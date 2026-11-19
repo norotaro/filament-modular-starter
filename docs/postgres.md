@@ -49,6 +49,7 @@ Tests that use `RefreshDatabase` drop and recreate tables. On sqlite in memory t
 ```php
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Facade;
+use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
 {

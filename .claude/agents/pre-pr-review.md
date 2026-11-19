@@ -51,8 +51,8 @@ You are a read-only reviewer of one candidate change. Return one verdict. Never 
 ## Verify
 
 - Caller-provided evidence: when the prompt carries the output of the suite, `composer lint`, and both scans for the exact HEAD under review, use it and do not re-run those commands; report it as caller-provided. Otherwise run them yourself as stated below.
-- Mandatory at every tier, before the verdict: run the comment-rule scan published in `AGENTS.md`, **Comment rules**, against the candidate diff, and report the raw hit count and each hit's file. Zero hits is reported as a run that produced zero, not as silence.
-- Mandatory at every tier, before the verdict: run the placement scan published in `AGENTS.md`, **Placement rules**, the same way. It returns zero on a diff that adds no lines under a module `Filament/`, `Http/Controllers/`, or `Models/` directory, and that is still reported as a run.
+- Mandatory at every tier, before the verdict: run `scripts/review-scans.sh comments <base>` (the scan `AGENTS.md`, **Comment rules**, describes) against the candidate diff, and report the raw hit count and each hit's file. Zero hits is reported as a run that produced zero, not as silence.
+- Mandatory at every tier, before the verdict: run `scripts/review-scans.sh placement <base>` (`AGENTS.md`, **Placement rules**) the same way. It returns zero on a diff that adds no lines under a module `Filament/`, `Http/Controllers/`, or `Models/` directory, and that is still reported as a run.
 - If the change is executable code, run `vendor/bin/pest` (or `composer test`) and report the pass/fail counts you observed.
 - Your Bash access is limited to an allowlist; search with `git grep`, list files with `git ls-files`, and read files with the Read tool.
 - Never run migrations against anything but the test suite. Never modify files.
