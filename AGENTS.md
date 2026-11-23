@@ -48,7 +48,7 @@ These bind what you write. They extend `app/README.md`, `### Modules` and `## Fi
 - Test-first: write a failing test (RED) before the fix or feature, then make it pass. Report the real pass/fail counts you observed.
 - `vendor/bin/pest`: the suite. `composer test` runs it in parallel through `php artisan test --parallel --compact`.
 - `vendor/bin/phpstan analyse`: static analysis (Larastan, configured in `phpstan.neon`).
-- `vendor/bin/pint`: formatter. `vendor/bin/pint --test` checks without writing; `composer lint` runs `pint --diff=main` plus PHPStan.
+- `vendor/bin/pint`: formatter. `vendor/bin/pint --test` checks without writing; `composer lint` runs `pint` plus PHPStan.
 - Tests assert observable behavior through the public interface, not string matches over source files.
 
 ## Pre-PR review

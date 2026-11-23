@@ -73,7 +73,7 @@
             "@php artisan test --parallel --compact"
         ],
         "lint": [
-            "./vendor/bin/pint --diff=main",
+            "./vendor/bin/pint",
             "./vendor/bin/phpstan analyse"
         ]
     },
