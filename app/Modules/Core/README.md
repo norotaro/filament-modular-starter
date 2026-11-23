@@ -55,7 +55,6 @@ Mechanics are documented once in [`../../README.md`](../../README.md#signed-gues
 - **`Str::plain()` is a global macro defined inside a module provider** (`CoreServiceProvider::boot()`). It strips HTML tags, decodes entities and collapses whitespace; it is invisible to IDEs and static analysis at call sites and unavailable until Core boots.
 - **`Core/lang/` is loaded as both a namespaced path and a JSON path from the same directory.**
 - **`Core/Database/Migrations/` holds the framework migrations** — cache, jobs, activity log and notifications. The app's `database/migrations` equivalent lives inside modules. The activity-log and notifications tables are pre-consolidated: they ship in their final shape, not as a chain of historical patches.
-- **`Concerns/`, not `Traits/`.** The convention is repo-wide — Users uses `Filament/Concerns/` too if you add one.
 - **`HasModuleFactory` assumes the FQCN contains `Models\`.** A model outside a `Models\` segment yields the same string from both `Str::before()` and `Str::after()`, producing a bogus factory path and a fatal. This trait is what lets each module keep factories inside its own tree instead of `database/factories`.
 - **`FileType`'s backing values are MIME types, not extensions** — matching must compare MIME strings.
 - **A whitespace-only localized value is no text.** `Support\LocalizedText::resolve()` is the single display rule for localized JSON fields (`{"es": "…", "en": "…"}`): first chain locale holding text, else any stored locale with text, in stored order, else `''`. Callers own the chain; `HasLocalizedFields::getTranslation()` builds it from the requested locale and `config('app.fallback_locale')`, and delegates to the rule except with `useFallback: false`, which stays an exact read so a form edits what is stored. `Casts\LocalizedArray` is the cast for the same column shape and reads a null or non-object column as `[]`.
@@ -64,4 +63,4 @@ Mechanics are documented once in [`../../README.md`](../../README.md#signed-gues
 
 ## Layout
 
-Standard module convention: [`../../README.md`](../../README.md#modules). Deviations: helpers live in `Support/` with the module system nested under `Support/Modules/`; traits live in `Concerns/`, not `Traits/`; and `Filament/` contains only the shared panel base class rather than any resource or action.
+Standard module convention: [`../../README.md`](../../README.md#modules). Deviations: helpers live in `Support/` with the module system nested under `Support/Modules/`; traits live in `Concerns/`; and `Filament/` contains only the shared panel base class rather than any resource or action.
