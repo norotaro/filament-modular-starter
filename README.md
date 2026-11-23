@@ -36,7 +36,7 @@ Creating the project copies `.env.example` to `.env`, generates the app key, cre
 | Partners | `app/Partners` | Contracts for outbound integrations, with a payment gateway interface and a dummy gateway as the reference. |
 | Example module | `app/Modules/Example` | A small module that follows every convention. Copy it to start a real one. |
 | Guards | `tests/Unit` | Architecture and placement tests that keep the layers apart as the app grows. |
-| Agents | `AGENTS.md`, `.claude/`, `.opencode/` | A guide for coding agents and read-only pre-PR reviewer agents. |
+| Agents | `AGENTS.md` | A guide for coding agents: the architecture contract and the starter's default rules. |
 
 ## Requirements
 

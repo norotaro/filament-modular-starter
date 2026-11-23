@@ -8,7 +8,7 @@ This file is the single source of truth for four things the module READMEs link 
 
 - Cite by symbol name (`ModuleScope::resolve()`), never by line number. Line references rot on the next commit; symbol names survive refactors.
 - Document what is stable: boundaries, invariants, state transitions, intentional design, and negative facts about deliberate choices. For anything volatile, link out instead of quoting.
-- Code defects go to the issue tracker with `severity:`, `area:`, and `source:` labels — not into a README. A README that reads like a bug report rots before the fix lands.
+- Known defects go to the issue tracker, not into a README. A README that reads like a bug report rots before the fix lands.
 
 Translation convention (restated in the root README): source strings are English, and a module or panel that needs another language ships a JSON catalog such as the included `es.json` files, so the catalog is the only place a translation lives. `APP_LOCALE` picks the language and `APP_FALLBACK_LOCALE=en` falls back to the source string.
 
