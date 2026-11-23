@@ -2,8 +2,6 @@
 
 namespace App\Modules\Core\Support\Modules;
 
-use App\Modules\Core\Enums\ModuleIdentifier;
-
 /**
  * Per-request resolver that decides which modules are active.
  *
@@ -37,7 +35,7 @@ class ModuleScope
     }
 
     /** Checks whether a module is active for the current request context at runtime. */
-    public function isActive(ModuleIdentifier $identifier): bool
+    public function isActive(\BackedEnum $identifier): bool
     {
         if ($this->bypass) {
             return true;
@@ -112,7 +110,7 @@ class ModuleScope
      *
      * Pattern: `ModuleScope::resolve(ModuleIdentifier::X) ?? $someEnablementCheck`
      */
-    public static function resolve(ModuleIdentifier $identifier): ?bool
+    public static function resolve(\BackedEnum $identifier): ?bool
     {
         if (! app(ModuleRegistry::class)->has($identifier)) {
             return null;

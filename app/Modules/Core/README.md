@@ -20,7 +20,7 @@ Deliberately **not** here:
 ## How it works
 
 1. **Global middleware.** `bootstrap/app.php` configures only `trustProxies(at: '*')` and the `redirectGuestsTo` closure. It registers **no** middleware aliases, appends, groups or priority changes.
-2. **`CoreServiceProvider::register()`** binds `ModuleRegistry` as a singleton and `ModuleScope` as `scoped` — the binding is a factory, so the scope auto-resolves with `context: null, bypass: false` for every request unless something re-binds it (the skeleton ships nothing that does; see [Scoping without tenancy](../../README.md#scoping-without-tenancy) for how to add a per-request binder back).
+2. **`CoreServiceProvider::register()`** binds `ModuleRegistry` as a singleton and `ModuleScope` as `scoped` — the binding is a factory, so the scope auto-resolves with `context: null, bypass: false` for every request unless something re-binds it (the skeleton ships nothing that does; see [Scoping modules per tenant](../../README.md#scoping-modules-per-tenant) for how to add a per-request binder back).
 3. **`CoreServiceProvider::boot()` locks the registry**, registers the `module.active` alias, forces https in production, loads Core's migrations and lang, and defines the `Str::plain` macro.
 
 ### Registry, definition and scope — the Core-specific details
@@ -34,7 +34,7 @@ Deliberately **not** here:
 
 ### `EnsureModuleActive` — fail-closed 403
 
-Aliased as `module.active` in `CoreServiceProvider`. `handle()` takes the identifier as a string parameter and aborts 403 on **two distinct conditions in one guard** — an unknown identifier string, or no scope bound at all — with `'Module not active.'`, then aborts 403 with the different message `'Module not active for this context.'` when the scope says inactive. The two messages tell you which branch fired. Guest-facing routes outside every panel keep the container-default scope; if a closure cannot decide for a null context, gate those routes with a policy instead (signed download links are the usual case).
+Aliased as `module.active` in `CoreServiceProvider`. `handle()` takes the identifier as a string parameter and aborts 403 on **two distinct conditions in one guard** — an identifier no provider registered, or no scope bound at all — with `'Module not active.'`, then aborts 403 with the different message `'Module not active for this context.'` when the scope says inactive. The two messages tell you which branch fired. Guest-facing routes outside every panel keep the container-default scope; if a closure cannot decide for a null context, gate those routes with a policy instead (signed download links are the usual case).
 
 ### `RedirectUrlSigner` — no TTL
 
@@ -58,7 +58,7 @@ Mechanics are documented once in [`../../README.md`](../../README.md#signed-gues
 - **`HasModuleFactory` assumes the FQCN contains `Models\`.** A model outside a `Models\` segment yields the same string from both `Str::before()` and `Str::after()`, producing a bogus factory path and a fatal. This trait is what lets each module keep factories inside its own tree instead of `database/factories`.
 - **`FileType`'s backing values are MIME types, not extensions** — matching must compare MIME strings.
 - **A whitespace-only localized value is no text.** `Support\LocalizedText::resolve()` is the single display rule for localized JSON fields (`{"es": "…", "en": "…"}`): first chain locale holding text, else any stored locale with text, in stored order, else `''`. Callers own the chain; `HasLocalizedFields::getTranslation()` builds it from the requested locale and `config('app.fallback_locale')`, and delegates to the rule except with `useFallback: false`, which stays an exact read so a form edits what is stored. `Casts\LocalizedArray` is the cast for the same column shape and reads a null or non-object column as `[]`.
-- **`NoResultsFoundException` is the only class in `Exceptions/`** — throw it from a bulk-download-style service, catch it in the controller, declare it via `@throws` on the contract.
+- **`Exceptions/` holds `DomainException` and `NoResultsFoundException`.** `DomainException` is the base for business-rule violations a module throws on purpose. Throw `NoResultsFoundException` from a bulk-download-style service, catch it in the controller, and declare it via `@throws` on the contract.
 - **`Result` has a private constructor** — only `success()` and `failure()` build one — and **`value()` throws `InvalidArgumentException('Cannot retrieve value from a failed result.')`** on a failure. `isSuccess()` / `isFailure()` carry `@phpstan-assert-if-true` annotations so the throw is statically unreachable after a guard.
 
 ## Layout

@@ -4,8 +4,11 @@ includes:
 
 parameters:
 
+    # tests/Fixtures exercises Core's reusable traits, which an application
+    # without modules of its own would otherwise leave unused.
     paths:
         - app/
+        - tests/Fixtures/
 
     # Level 10 is the highest level
     level: 5

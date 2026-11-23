@@ -101,14 +101,14 @@ All three classes live in `app/Modules/Core/Support/Modules/`.
 
 `CoreServiceProvider::boot()` calls `lock()`. Laravel boots providers in registration order and Core is registered first, so **any module provider that calls `define()` from its own `boot()` will throw**. Define in `register()`.
 
-Modules declare themselves in their own providers — `ExampleServiceProvider` is the reference:
+Modules declare themselves in their own providers, in `register()`. For a hypothetical `Orders` module:
 
 ```php
-// app/Modules/Example/ExampleServiceProvider.php
+// app/Modules/Orders/OrdersServiceProvider.php
 $registry = $this->app->make(ModuleRegistry::class);
 $registry->define(new ModuleDefinition(
-    identifier: ModuleIdentifier::Example,
-    applicabilityCheck: fn (?object $context): bool => (bool) config('modules.example', true),
+    identifier: ModuleIdentifier::Orders,
+    applicabilityCheck: fn (?object $context): bool => (bool) config('modules.orders', true),
 ));
 ```
 
@@ -126,11 +126,11 @@ The default `ModuleScope` carries `context: null, bypass: false`, and each modul
 
 ### Identifiers
 
-`App\Modules\Core\Enums\ModuleIdentifier` is a plain `enum: string`. It is the code vocabulary: the middleware parameter, the `ModuleRegistry` key, and `ModuleScope` lookups all use it. If you add a persistence layer for enablement (a stored module key), keep it a **separate** enum: letting the code vocabulary and the stored vocabulary evolve independently is why nothing round-trips between them, and the coupling stays a manual invariant — a name in one without the other fails silently (`ModuleRegistry::has()` false, `resolve()` null, every `??` fallback firing).
+`App\Modules\Core\Enums\ModuleIdentifier` is a plain `enum: string`. It is the application's code vocabulary: providers register modules under its cases and code asks `ModuleScope` with them. Core itself accepts any string-backed enum, and the `module.active` middleware resolves its parameter through the registry, so Core does not depend on the cases an application ships. If you add a persistence layer for enablement (a stored module key), keep it a **separate** enum: letting the code vocabulary and the stored vocabulary evolve independently is why nothing round-trips between them, and the coupling stays a manual invariant — a name in one without the other fails silently (`ModuleRegistry::has()` false, `resolve()` null, every `??` fallback firing).
 
 ### Middleware
 
-**`EnsureModuleActive`** (`app/Modules/Core/Middleware/EnsureModuleActive.php`), aliased `module.active` in `CoreServiceProvider::boot()`. Usage: `Route::middleware('module.active:example')`. **Fail-closed**, with two distinct 403 messages so you can tell which branch fired: an unknown identifier string *or* no `ModuleScope` bound at all gives `'Module not active.'`; a scope that resolves inactive gives `'Module not active for this context.'`.
+**`EnsureModuleActive`** (`app/Modules/Core/Middleware/EnsureModuleActive.php`), aliased `module.active` in `CoreServiceProvider::boot()`. Usage: `Route::middleware('module.active:example')`. **Fail-closed**, with two distinct 403 messages so you can tell which branch fired: an identifier no provider registered *or* no `ModuleScope` bound at all gives `'Module not active.'`; a scope that resolves inactive gives `'Module not active for this context.'`.
 
 ### Signed guest redirects
 
@@ -153,31 +153,33 @@ This application uses a **hybrid pattern** that splits Filament responsibilities
 
 ### Where Things Go
 
+The example paths use a hypothetical `Orders` module and its `Order` model, to show where each class would land; none of them ship with the starter.
+
 | What | Where | Example |
 |------|-------|---------|
-| **Resource classes** (CRUD pages, navigation) | `app/Panels/{Panel}/Resources/` | `app/Panels/Admin/Resources/ExampleItems/ExampleItemResource.php` |
-| **Table compositions** (columns, filters) | `app/Panels/{Panel}/Resources/{Resource}/Tables/` | `.../Tables/ExampleItemsManageTable.php` |
-| **Infolist compositions** (detail views) | `app/Panels/{Panel}/Resources/{Resource}/Infolists/` | `.../Infolists/ExampleItemManageInfolist.php` |
-| **Form schemas** (form layouts, fields) | Shared: `app/Modules/{Module}/Filament/Schemas/`. Not shared: a dedicated file beside the resource it serves — `app/Panels/{Panel}/Resources/{Resource}/Schemas/{Resource}Form.php`, with the `Tables/` sibling per the Table compositions row. Never embedded in the resource class | `app/Modules/Example/Filament/Schemas/ExampleItemForm.php` |
-| **Action atoms** (buttons, operations) | `app/Modules/{Module}/Filament/Actions/` | `app/Modules/Example/Filament/Actions/PublishExampleItemAction.php` |
-| **Column atoms** | `app/Modules/{Module}/Filament/Tables/Columns/` | `app/Modules/Example/Filament/Tables/Columns/ExampleNameColumn.php` |
-| **Entry atoms** | `app/Modules/{Module}/Filament/Schemas/Entries/` | `app/Modules/Example/Filament/Schemas/Entries/NameEntry.php` |
-| **Plugins** | `app/Modules/{Module}/Filament/` | `app/Modules/Example/Filament/ExamplePlugin.php` |
+| **Resource classes** (CRUD pages, navigation) | `app/Panels/{Panel}/Resources/` | `app/Panels/Admin/Resources/Orders/OrderResource.php` |
+| **Table compositions** (columns, filters) | `app/Panels/{Panel}/Resources/{Resource}/Tables/` | `.../Tables/OrdersTable.php` |
+| **Infolist compositions** (detail views) | `app/Panels/{Panel}/Resources/{Resource}/Infolists/` | `.../Infolists/OrderInfolist.php` |
+| **Form schemas** (form layouts, fields) | Shared: `app/Modules/{Module}/Filament/Schemas/`. Not shared: a dedicated file beside the resource it serves — `app/Panels/{Panel}/Resources/{Resource}/Schemas/{Resource}Form.php`, with the `Tables/` sibling per the Table compositions row. Never embedded in the resource class | `app/Modules/Orders/Filament/Schemas/OrderForm.php` |
+| **Action atoms** (buttons, operations) | `app/Modules/{Module}/Filament/Actions/` | `app/Modules/Orders/Filament/Actions/CancelOrderAction.php` |
+| **Column atoms** | `app/Modules/{Module}/Filament/Tables/Columns/` | `app/Modules/Orders/Filament/Tables/Columns/OrderStatusColumn.php` |
+| **Entry atoms** | `app/Modules/{Module}/Filament/Schemas/Entries/` | `app/Modules/Orders/Filament/Schemas/Entries/OrderTotalEntry.php` |
+| **Plugins** | `app/Modules/{Module}/Filament/` | `app/Modules/Orders/Filament/OrdersPlugin.php` |
 
 ### Rationale
 
 - **Resource classes in Panels**: resources are a presentation-layer concern — they define navigation, routing, and page composition. Different panels expose different resources over the same module.
 - **Table and infolist compositions in Panels**: these wire atoms together for one panel's context.
 - **Atoms in Modules**: actions, form schemas, columns, and entries are reusable building blocks that carry *shape* knowledge — which fields, which validations, which columns — and get composed into different resources and widgets. Shape is not a verdict: an atom never decides who may act, whether a workflow stage permits it, or what a missing related record means.
-- **Atoms compose UI, not reads**: no `::query()` and no relationship traversal inside an atom — a data read that feeds a decision goes through a module service seam; an inline `ExampleItem::query()` inside a column or action closure is not one. `tests/Unit/PlacementGuardTest.php` pins the static-facade half over the atom directories and the whole panel layer; relationship traversal stays a review rule, because a text scan cannot know the receiver's type.
+- **Atoms compose UI, not reads**: no `::query()` and no relationship traversal inside an atom — a data read that feeds a decision goes through a module service seam; an inline `Order::query()` inside a column or action closure is not one. `tests/Unit/PlacementGuardTest.php` pins the static-facade half over the atom directories and the whole panel layer; relationship traversal stays a review rule, because a text scan cannot know the receiver's type.
 - **Atoms name the permission, they do not compute it**: `->authorize('update')` hands the whole who/whether question to a policy arm — `UserPolicy::update()` is that shape for an `Identity` record. `authorize()` only stores the ability; Filament prepends the record (`parseAuthorizationArguments()`) and resolves the actor downstream in `resolveIsAuthorized()` through `Gate::check()`, so the atom never touches either. A private `canView()` that reads `auth()->user()`, ANDs a record state with a `Gate::forUser()` call, or answers the missing-related-record case is policy written in the UI layer: the arm that owns it belongs in `Policies/`, or in a service can-method. A permission leg needs no second visibility leg: `CanBeHidden::resolveIsHiddenInGroup()` folds the verdict in, so `->authorize('<arm>')` on its own keeps an unauthorized atom out of the layout, and `->hidden()` is reserved for a reason that is *not* the gate — a record state, a feature flag, a mount that does not apply here. Asking the gate again inside `->hidden()` is the second copy of the rule this bullet forbids, and it is worse than redundant: `resolveIsHiddenInGroup()` evaluates the `->hidden()` closure first and returns hidden from there, so the authorization branch below it is never reached.
 - **An authorization message needs a message to show**: when a person should see why an affordance is unavailable, that is `authorizationTooltip()` or `authorizationNotification()`, which render the atom with a message instead of hiding it (`CanBeAuthorized::resolveIsAuthorizedOrNotHiddenWhenUnauthorized()`). Both only work when the denial carries a message. A policy arm returning plain `false` — every arm of `UserPolicy` today — has nothing to show, so the atom stays hidden even with those calls set, unless the atom supplies the fallback with `authorizationMessage()` (`CanBeAuthorized::authorizationMessage()`; documented in `vendor/filament/actions/docs/01-overview.md`, the installed package's own copy). A `->hidden()` gate read-back on the same atom makes that pairing inert, for the reason in the bullet above.
 
-A resource therefore stays thin and delegates: a resource's `form()` and `table()` are one-liners handing off to `ExampleItemForm::configure()` and `ExampleItemsTable::configure()`. When a generator emits an embedded schema or table (`--simple`, `--embed-schemas`, `--embed-table`), the embedded content moves into its own file before the work is committed.
+A resource therefore stays thin and delegates: a resource's `form()` and `table()` are one-liners handing off to `OrderForm::configure()` and `OrdersTable::configure()`. When a generator emits an embedded schema or table (`--simple`, `--embed-schemas`, `--embed-table`), the embedded content moves into its own file before the work is committed.
 
 ### Plugin Registration
 
-Modules that need per-panel state register a Filament plugin class in `Filament/` and panels instantiate it (`ExamplePlugin::make()`), exposing a static `current()` accessor as a typed wrapper around the container binding when other code needs to read it back. Feature flags per panel are fixed at registration time, not per request.
+Modules that need per-panel state register a Filament plugin class in `Filament/` and panels instantiate it (`OrdersPlugin::make()`), exposing a static `current()` accessor as a typed wrapper around the container binding when other code needs to read it back. Feature flags per panel are fixed at registration time, not per request.
 
 ## Partner Gateway Development Guide
 
