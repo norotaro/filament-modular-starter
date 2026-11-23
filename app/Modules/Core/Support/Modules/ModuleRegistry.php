@@ -2,7 +2,6 @@
 
 namespace App\Modules\Core\Support\Modules;
 
-use App\Modules\Core\Enums\ModuleIdentifier;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -39,13 +38,13 @@ class ModuleRegistry
         $this->locked = true;
     }
 
-    public function get(ModuleIdentifier $identifier): ?ModuleDefinition
+    public function get(\BackedEnum $identifier): ?ModuleDefinition
     {
         return $this->definitions[$identifier->value] ?? null;
     }
 
     /** Checks whether a module identifier is registered in the catalog. */
-    public function has(ModuleIdentifier $identifier): bool
+    public function has(\BackedEnum $identifier): bool
     {
         return isset($this->definitions[$identifier->value]);
     }

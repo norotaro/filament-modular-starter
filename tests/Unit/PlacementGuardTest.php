@@ -94,15 +94,9 @@ if (! function_exists('eloquentReadFacades')) {
 it('guards a placement scope that actually resolves to files', function () {
     $files = guardedPlacementFiles();
 
-    // An empty scope passes every scan, so the scope itself is the assertion: the
-    // Example module's atoms are the reference consumers of this rule.
-    $atoms = array_values(array_filter(
-        $files,
-        fn (string $path): bool => str_contains($path, '/Modules/Example/Filament/Tables/')
-    ));
-
+    // An empty scope passes every scan, so the scope itself is the assertion. The
+    // panel layer always holds files; atoms exist only once a module ships some.
     expect($files)->not->toBeEmpty();
-    expect($atoms)->not->toBeEmpty();
 });
 
 it('flags the static read facades it forbids', function () {

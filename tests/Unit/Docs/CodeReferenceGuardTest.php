@@ -120,15 +120,15 @@ if (! function_exists('code_reference_guard_living_docs')) {
 
 test('living docs scope finds the docs it claims to guard', function () {
     $files = code_reference_guard_living_docs();
-    $names = array_map(basename(...), $files);
 
     $unreadable = array_values(array_filter($files, fn ($path) => ! is_readable($path)));
 
     expect($unreadable)->toBe([])
         ->and($files[0])->toBe(dirname(__DIR__, 3).'/README.md')
         ->and($files[1])->toBe(dirname(__DIR__, 3).'/app/README.md')
-        ->and(count(array_filter($names, fn ($name) => $name === 'README.md')))->toBeGreaterThanOrEqual(5)
-        ->and(count($files))->toBeGreaterThanOrEqual(5);
+        // Core is the one module every application keeps, so its README proves the
+        // module walk works without counting modules an application may delete.
+        ->and($files)->toContain(dirname(__DIR__, 3).'/app/Modules/Core/README.md');
 });
 
 test('living docs contain no code-line citations', function () {

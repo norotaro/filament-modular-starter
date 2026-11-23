@@ -1,6 +1,6 @@
 # Example Module
 
-Reference module that demonstrates every skeleton convention in one place: provider auto-discovery, module registry participation, module-local migrations, factories, a Filament atom, and per-module translations. Delete it when the first real module lands — or copy it as the starting point.
+Reference module that demonstrates every skeleton convention in one place: provider auto-discovery, module registry participation, module-local migrations, factories, a Filament atom, and per-module translations. Copy it as the starting point for a real module, or delete it once you no longer need it (see [Removing this module](#removing-this-module)).
 
 ## What this module owns
 
@@ -11,7 +11,7 @@ Reference module that demonstrates every skeleton convention in one place: provi
 - **Auto-discovery.** `Core\ModuleManagerServiceProvider` globs `app/Modules/*/*ServiceProvider.php` and registers `ExampleServiceProvider` without any `bootstrap/providers.php` entry. The filename equals the class name and the class sits at the module root namespace — otherwise `class_exists()` fails and the provider is silently skipped, with no warning anywhere.
 - **Registry declaration in `register()`.** The provider calls `ModuleRegistry::define()` from `register()`, never from `boot()`: `CoreServiceProvider::boot()` locks the registry and Core boots first, so a late `define()` throws `RuntimeException`.
 - **Two modules, two defaults.** `ModuleIdentifier::Example` is active unless `config('modules.example')` says otherwise; `ModuleIdentifier::Sample` is inactive unless `config('modules.sample')` enables it. That asymmetry makes both the active path and the fail-closed `module.active` 403 demonstrable without editing code. `ModuleScope::resolve()` returns `null` in the shipped skeleton — the default scope carries no context and no bypass, so it cannot decide until a tenant context is re-introduced (see the scoping section in [`../../README.md`](../../README.md)).
-- **Gating.** To guard a route: `Route::middleware('module.active:sample')`. The middleware is fail-closed — an unknown identifier aborts 403 with `'Module not active.'`, an inactive scope aborts 403 with `'Module not active for this context.'`.
+- **Gating.** To guard a route: `Route::middleware('module.active:sample')`. The middleware is fail-closed — an identifier no provider registered aborts 403 with `'Module not active.'`, an inactive scope aborts 403 with `'Module not active for this context.'`.
 - **Module-local everything.** Migrations load via `loadMigrationsFrom()`, translations via `loadJsonTranslationsFrom()`. Factories resolve inside the module through `Core\Concerns\HasModuleFactory`, which requires models to live under `Models/` — a model outside a `Models\` segment yields a bogus factory path and a fatal.
 - **A localized column.** `ExampleItem::$tagline` is a JSON column keyed by locale: `Core\Casts\LocalizedArray` reads and writes the whole map, and `Core\Concerns\HasLocalizedFields::getTranslation()` picks the text to show. The display rule is Core's; see [`../Core/README.md`](../Core/README.md).
 
@@ -22,3 +22,12 @@ Reference module that demonstrates every skeleton convention in one place: provi
 ## Layout
 
 Standard module convention: [`../../README.md`](../../README.md). `Example/` contains only the directories a module actually needs — there is no Services/, Policies/ or routes/ here because this demo has none.
+
+## Removing this module
+
+Nothing outside this module depends on it, including the test suite. To remove it:
+
+1. Delete `app/Modules/Example/` and `tests/Feature/ExampleModuleTest.php`.
+2. Remove the `Example` and `Sample` cases from `Core\Enums\ModuleIdentifier`.
+3. Remove the `example` and `sample` entries from `config/modules.php`.
+4. Drop the `example_items` table if a database already ran its migrations (`php artisan migrate:fresh` in development).

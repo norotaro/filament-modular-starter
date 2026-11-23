@@ -1,6 +1,5 @@
 <?php
 
-use App\Modules\Example\ExampleServiceProvider;
 use App\Modules\Users\UserServiceProvider;
 use App\Partners\DummyPayments\DummyPaymentServiceProvider;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -15,17 +14,12 @@ it('redirects the root route to the default panel', function () {
     $this->get('/')->assertRedirect('/admin');
 });
 
-it('registers module providers via the ModuleManagerServiceProvider glob', function () {
-    // ExampleServiceProvider matches the one-level glob shape and is NOT
-    // listed in bootstrap/providers.php — this assertion is what proves the
-    // auto-discovery works end to end.
-    expect(app()->getProvider(ExampleServiceProvider::class))->not->toBeNull();
-});
-
 it('registers partner providers via the ModuleManagerServiceProvider glob', function () {
     expect(app()->getProvider(DummyPaymentServiceProvider::class))->not->toBeNull();
 });
 
-it('registers the Users module provider through the same glob', function () {
+it('registers module providers via the ModuleManagerServiceProvider glob', function () {
+    // UserServiceProvider is not listed in bootstrap/providers.php, so finding it
+    // registered proves the auto-discovery works end to end.
     expect(app()->getProvider(UserServiceProvider::class))->not->toBeNull();
 });

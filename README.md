@@ -70,7 +70,7 @@ To add a panel, copy one under `app/Panels/`, add a case to `PanelID`, and list 
 | `composer dev` | Runs the server, a queue listener, log tailing and Vite together. |
 | `composer test` | Runs the Feature and Unit suites in parallel. |
 | `composer test:browser` | Runs the browser suite (see below). |
-| `composer lint` | Formats changed files with Pint, then runs PHPStan. |
+| `composer lint` | Formats every file with Pint, then runs PHPStan. |
 
 ## Testing
 

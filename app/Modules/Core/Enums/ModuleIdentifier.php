@@ -6,8 +6,8 @@ namespace App\Modules\Core\Enums;
  * Code-level module identifier used in middleware, routing, and the programmatic ModuleRegistry.
  *
  * This is the application's internal module vocabulary. Add one case per
- * optional module (like `Example` below); the backing string is what the
- * `module.active` middleware parameter and the registry keys use.
+ * optional module; the backing string is what the `module.active` middleware
+ * parameter and the registry keys use.
  *
  * If you add a persistence layer for module enablement (for example
  * a per-tenant `module_key` enum stored in a database table), keep it

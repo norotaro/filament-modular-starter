@@ -12,4 +12,4 @@ Guides:
 
 - [Running on Postgres](postgres.md): switching development and the test suite from sqlite, and guarding the test database.
 
-The test suite enforces the citation rule: see `tests/Unit/Docs/CodeReferenceGuardTest.php`.
+The test suite enforces the citation rule for the root `README.md`, `app/README.md` and the module READMEs (see `tests/Unit/Docs/CodeReferenceGuardTest.php`); it does not scan this directory, so the rule here is kept by review.

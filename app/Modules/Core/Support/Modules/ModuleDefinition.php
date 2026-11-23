@@ -2,8 +2,6 @@
 
 namespace App\Modules\Core\Support\Modules;
 
-use App\Modules\Core\Enums\ModuleIdentifier;
-
 /**
  * Immutable description of one optional module.
  *
@@ -11,6 +9,9 @@ use App\Modules\Core\Enums\ModuleIdentifier;
  * request's scoping context. The skeleton ships with no tenancy, so the
  * context is always null; a multi-tenant application passes its tenant
  * model (or any context object) through `ModuleScope::forContext()`.
+ *
+ * The identifier may come from any string-backed enum, but the registry keys
+ * definitions by its backing value alone: two enums sharing a value collide.
  */
 final readonly class ModuleDefinition
 {
@@ -20,7 +21,7 @@ final readonly class ModuleDefinition
      * @param  array<int, class-string>  $panelSubNavigation
      */
     public function __construct(
-        public ModuleIdentifier $identifier,
+        public \BackedEnum $identifier,
         public \Closure $applicabilityCheck,
         public array $panelPages = [],
         public array $panelSubNavigation = [],
