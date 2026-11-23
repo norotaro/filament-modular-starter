@@ -59,7 +59,7 @@ To make modules depend on a tenant or organization, pass your own context to `Mo
 
 ## Panels and roles
 
-Roles live in `App\Modules\Users\Enums\UserType` and map one-to-one to panels through `App\Panels\Commons\Enums\PanelID`. `Admin` and `SuperAdmin` each have a panel. `Reviewer` and `Participant` exist as roles but cannot sign in until you give them a panel.
+Roles live in `App\Modules\Users\Enums\UserType` and map one-to-one to panels through `App\Panels\Commons\Enums\PanelID`. The starter ships `Admin` and `SuperAdmin`, each with its own panel. The `type` column has no default, so every user gets an explicit role. The Users module README explains how to add one.
 
 To add a panel, copy one under `app/Panels/`, add a case to `PanelID`, and list the provider in `bootstrap/providers.php`. Details are in [app/Modules/Users/README.md](app/Modules/Users/README.md).
 

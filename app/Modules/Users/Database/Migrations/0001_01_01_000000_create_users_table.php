@@ -1,6 +1,5 @@
 <?php
 
-use App\Modules\Users\Enums\UserType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -10,8 +9,8 @@ use Illuminate\Support\Facades\Schema;
  *
  * The skeleton is born with this schema — `timezone` and soft deletes are
  * part of the base table, not later patches. The `type` column drives
- * Parental single-table inheritance; it keeps a DB default so rows created
- * outside role-aware flows still resolve to a valid UserType.
+ * Parental single-table inheritance and has no DB default on purpose: a row
+ * created without an explicit role fails instead of silently landing in one.
  */
 return new class extends Migration
 {
@@ -27,7 +26,7 @@ return new class extends Migration
             $table->string('timezone')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('type')->default(UserType::Participant->value);
+            $table->string('type');
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

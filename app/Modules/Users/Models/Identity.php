@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $timezone User's timezone
  * @property-read Carbon|null $email_verified_at Timestamp when email was verified
  * @property string $password Hashed password
- * @property-read UserType $type User type (SuperAdmin, Admin, Reviewer, Participant) — never mass assignable
+ * @property-read UserType $type User type (SuperAdmin, Admin) — never mass assignable
  * @property-read string|null $remember_token Remember token for authentication
  * @property-read Carbon $created_at Timestamp when user was created
  * @property-read Carbon $updated_at Timestamp when user was last updated
@@ -107,10 +107,5 @@ class Identity extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function isSuperAdmin(): bool
     {
         return $this->type === UserType::SuperAdmin;
-    }
-
-    public function isParticipant(): bool
-    {
-        return $this->type === UserType::Participant;
     }
 }

@@ -65,18 +65,4 @@ class UserFactory extends Factory
             'type' => UserType::Admin,
         ]);
     }
-
-    public function participant(): static
-    {
-        return $this->state(fn () => [
-            'type' => UserType::Participant,
-        ]);
-    }
-
-    public function reviewer(): static
-    {
-        return $this->state(fn () => [
-            'type' => UserType::Reviewer,
-        ]);
-    }
 }
