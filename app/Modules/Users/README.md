@@ -56,6 +56,8 @@ Panel access is enforced by `Identity::canAccessPanel()`: `PanelID::tryFrom($pan
 
 ### Creating a user
 
+Every user needs an explicit `type`, because the column has no default. Filament's `php artisan make:filament-user` does not set it, so it fails with a NOT NULL error; create users through `UserFactory`'s `admin()`/`superAdmin()` states, the seeder, or code that force-fills `type`.
+
 `Identity` has no `creating` hook. If your app adds tenancy, enforce membership in a `static::creating` closure (for example, non-SuperAdmin rows inherit `organization_id` from the authenticated user and creation fails when it stays null); factories and seeders are written so nothing else needs to change.
 
 `users.id` is `bigIncrements`; email is globally unique. Making it unique per tenant takes a composite index that belongs with the tenant model, not with the users table.
