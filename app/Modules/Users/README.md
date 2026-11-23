@@ -79,4 +79,4 @@ Panel access is enforced by `Identity::canAccessPanel()`: `PanelID::tryFrom($pan
 
 ## Layout
 
-Standard module convention: [`../../README.md`](../../README.md#modules). Auth UI lives in `Filament/Pages/`; there is no `Traits/` directory.
+Standard module convention: [`../../README.md`](../../README.md#modules). Auth UI lives in `Filament/Pages/`.
