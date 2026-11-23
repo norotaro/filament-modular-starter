@@ -1,10 +1,7 @@
 {
     "Administrator": "Administrador",
-    "Reviewer": "Revisor",
     "Super Administrator": "Super Administrador",
     "Panel Administrator": "Administrador del panel",
-    "Self-registered Participant": "Participante autoregistrado",
-    "Assigned Reviewer": "Revisor asignado",
     "System Admin with superpowers": "Administrador del sistema con superpoderes",
     "Timezone": "Zona horaria"
 }

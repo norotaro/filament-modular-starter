@@ -9,7 +9,7 @@ use Parental\HasChildren;
  * User Model
  *
  * Polimorphic user model that automatically casts records to their specific
- * types (Admin, Participant, etc.) based on the 'type' column.
+ * types (SuperAdmin, Admin) based on the 'type' column.
  */
 class User extends Identity
 {
@@ -18,7 +18,5 @@ class User extends Identity
     protected $childTypes = [
         UserType::SuperAdmin->value => SuperAdmin::class,
         UserType::Admin->value => Admin::class,
-        UserType::Reviewer->value => Reviewer::class,
-        UserType::Participant->value => Participant::class,
     ];
 }

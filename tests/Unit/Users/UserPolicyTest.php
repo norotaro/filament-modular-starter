@@ -41,27 +41,12 @@ describe('UserPolicy', function () {
             ->and($policy->create(policyActor(UserType::Admin, 2)))->toBeTrue();
     });
 
-    test('Reviewer and Participant may not view any or create', function () {
+    test('Admin may view and update other non Super Admin users', function () {
         $policy = new UserPolicy;
+        $actor = policyActor(UserType::Admin, 2);
 
-        expect($policy->viewAny(policyActor(UserType::Reviewer, 3)))->toBeFalse()
-            ->and($policy->create(policyActor(UserType::Participant, 4)))->toBeFalse();
-    });
-
-    test('users may view and update their own record', function () {
-        $policy = new UserPolicy;
-        $actor = policyActor(UserType::Participant, 5);
-
-        expect($policy->view($actor, policyTarget(UserType::Participant, 5)))->toBeTrue()
-            ->and($policy->update($actor, policyTarget(UserType::Participant, 5)))->toBeTrue();
-    });
-
-    test('users may not view or update someone else', function () {
-        $policy = new UserPolicy;
-        $actor = policyActor(UserType::Participant, 5);
-
-        expect($policy->view($actor, policyTarget(UserType::Participant, 6)))->toBeFalse()
-            ->and($policy->update($actor, policyTarget(UserType::Participant, 6)))->toBeFalse();
+        expect($policy->view($actor, policyTarget(UserType::Admin, 3)))->toBeTrue()
+            ->and($policy->update($actor, policyTarget(UserType::Admin, 3)))->toBeTrue();
     });
 
     test('Admin may never mutate or delete a Super Admin row', function () {
@@ -78,11 +63,5 @@ describe('UserPolicy', function () {
         $actor = policyActor(UserType::Admin, 2);
 
         expect($policy->delete($actor, policyTarget(UserType::Admin, 2)))->toBeFalse();
-    });
-
-    test('non Admins may not delete at all', function () {
-        $policy = new UserPolicy;
-
-        expect($policy->delete(policyActor(UserType::Participant, 7), policyTarget(UserType::Participant, 8)))->toBeFalse();
     });
 });

@@ -9,8 +9,8 @@ use App\Modules\Users\Models\Identity;
  * Minimal user policy for the skeleton.
  *
  * Super Admins bypass everything through `before()`; Admins manage the user
- * population; everyone may view and update their own record. A tenancy layer
- * would scope the Admin abilities to the admin's own tenant here.
+ * population; any other role is denied every ability until you grant it here.
+ * A tenancy layer would scope the Admin abilities to the admin's own tenant here.
  */
 class UserPolicy
 {
@@ -39,12 +39,7 @@ class UserPolicy
      */
     public function view(Identity $user, Identity $model): bool
     {
-        if ($user->type === UserType::Admin) {
-            return true;
-        }
-
-        // Users can view their own profile
-        return $user->id === $model->id;
+        return $user->type === UserType::Admin;
     }
 
     /**
@@ -62,14 +57,12 @@ class UserPolicy
     {
         if ($user->type === UserType::Admin) {
             // Admins may not mutate Super Admin rows
+            // Policies gate model access, not fields: the role column stays
+            // out of payloads through Identity::$fillable instead.
             return $model->type !== UserType::SuperAdmin;
         }
 
-        // Users may update their own record. Which *columns* a payload may
-        // touch is not enforced here: policies gate model access, not fields.
-        // The role column stays out of payloads via Identity::$fillable and
-        // is written only by trusted flows.
-        return $user->id === $model->id;
+        return false;
     }
 
     /**

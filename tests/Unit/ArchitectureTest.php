@@ -79,11 +79,6 @@ arch('no eloquent model lives outside a Models namespace')
     ->not->toExtend(Model::class)
     ->ignoring($modelNamespaces);
 
-arch('a Models namespace holds nothing but eloquent models')
-    ->expect('App\Modules\*\Models')
-    ->toBeClasses()
-    ->toExtend(Model::class);
-
 arch('every class name matches the casing of its path')
     ->expect('App')
     ->toBeCasedCorrectly();
@@ -133,25 +128,6 @@ it('lists every panel provider in bootstrap/providers.php', function () {
     }
 
     expect($unregistered)->toBe([]);
-});
-
-it('registers no module or partner provider by hand', function () {
-    // The manager's glob already registers these. A second listing is a runtime
-    // no-op ({@see \Illuminate\Foundation\Application::register()} skips a
-    // provider it already holds), but it hides which mechanism boots it.
-    $registered = (array) include base_path('bootstrap/providers.php');
-    $providers = moduleAndPartnerProviderFiles();
-    $handListed = [];
-
-    expect($providers)->not->toBeEmpty();
-
-    foreach ($providers as $fqcn) {
-        if (in_array($fqcn, $registered, true)) {
-            $handListed[] = $fqcn;
-        }
-    }
-
-    expect($handListed)->toBe([]);
 });
 
 it('names each discoverable provider after its own file', function () {

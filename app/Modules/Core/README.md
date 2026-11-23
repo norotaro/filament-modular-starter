@@ -21,7 +21,7 @@ Deliberately **not** here:
 
 1. **Global middleware.** `bootstrap/app.php` configures only `trustProxies(at: '*')` and the `redirectGuestsTo` closure. It registers **no** middleware aliases, appends, groups or priority changes.
 2. **`CoreServiceProvider::register()`** binds `ModuleRegistry` as a singleton and `ModuleScope` as `scoped` — the binding is a factory, so the scope auto-resolves with `context: null, bypass: false` for every request unless something re-binds it (the skeleton ships nothing that does; see [Scoping modules per tenant](../../README.md#scoping-modules-per-tenant) for how to add a per-request binder back).
-3. **`CoreServiceProvider::boot()` locks the registry**, registers the `module.active` alias, forces https in production, loads Core's migrations and lang, and defines the `Str::plain` macro.
+3. **`CoreServiceProvider::boot()` locks the registry**, registers the `module.active` alias, forces https in production, and loads Core's migrations and lang.
 
 ### Registry, definition and scope — the Core-specific details
 
@@ -52,13 +52,11 @@ Mechanics are documented once in [`../../README.md`](../../README.md#signed-gues
 - **`ModuleScope`'s `scoped()` binding is default-constructible** (`?object $context = null`, `bool $bypass = false`), so any request without a binder silently gets `context = null, bypass = false` and `resolve()` returns `null` for every identifier.
 - **Both provider auto-discovery globs are exactly one directory level deep** (`ModuleManagerServiceProvider`). A provider nested deeper is not matched and must be registered by hand. The **filename must equal the class name** and the class must sit at the module root namespace, or `class_exists` skips it **without any warning**. Core itself is skipped by name because it is registered first, unconditionally. `ModuleManagerServiceProvider` has **no `boot()`** — everything happens in `register()`.
 - **`app/` has NO `Providers/` directory and there is no `AppServiceProvider`.** Conventional model-to-policy discovery plus the explicit `Gate::policy(Identity::class, UserPolicy::class)` in `UserServiceProvider` are the whole authorization surface.
-- **`Str::plain()` is a global macro defined inside a module provider** (`CoreServiceProvider::boot()`). It strips HTML tags, decodes entities and collapses whitespace; it is invisible to IDEs and static analysis at call sites and unavailable until Core boots.
 - **`Core/lang/` is loaded as both a namespaced path and a JSON path from the same directory.**
 - **`Core/Database/Migrations/` holds the framework migrations** — cache, jobs, activity log and notifications. The app's `database/migrations` equivalent lives inside modules. The activity-log and notifications tables are pre-consolidated: they ship in their final shape, not as a chain of historical patches.
 - **`HasModuleFactory` assumes the FQCN contains `Models\`.** A model outside a `Models\` segment yields the same string from both `Str::before()` and `Str::after()`, producing a bogus factory path and a fatal. This trait is what lets each module keep factories inside its own tree instead of `database/factories`.
-- **`FileType`'s backing values are MIME types, not extensions** — matching must compare MIME strings.
 - **A whitespace-only localized value is no text.** `Support\LocalizedText::resolve()` is the single display rule for localized JSON fields (`{"es": "…", "en": "…"}`): first chain locale holding text, else any stored locale with text, in stored order, else `''`. Callers own the chain; `HasLocalizedFields::getTranslation()` builds it from the requested locale and `config('app.fallback_locale')`, and delegates to the rule except with `useFallback: false`, which stays an exact read so a form edits what is stored. `Casts\LocalizedArray` is the cast for the same column shape and reads a null or non-object column as `[]`.
-- **`Exceptions/` holds `DomainException` and `NoResultsFoundException`.** `DomainException` is the base for business-rule violations a module throws on purpose. Throw `NoResultsFoundException` from a bulk-download-style service, catch it in the controller, and declare it via `@throws` on the contract.
+- **`Exceptions/DomainException` is the base for business-rule violations** a module throws on purpose, so the application layer can catch them apart from programming errors.
 - **`Result` has a private constructor** — only `success()` and `failure()` build one — and **`value()` throws `InvalidArgumentException('Cannot retrieve value from a failed result.')`** on a failure. `isSuccess()` / `isFailure()` carry `@phpstan-assert-if-true` annotations so the throw is statically unreachable after a guard.
 
 ## Layout

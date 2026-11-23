@@ -36,7 +36,7 @@ Creating the project copies `.env.example` to `.env`, generates the app key, cre
 | Partners | `app/Partners` | Contracts for outbound integrations, with a payment gateway interface and a dummy gateway as the reference. |
 | Example module | `app/Modules/Example` | A small module that follows every convention. Copy it to start a real one. |
 | Guards | `tests/Unit` | Architecture and placement tests that keep the layers apart as the app grows. |
-| Agents | `AGENTS.md`, `.claude/`, `.opencode/` | A guide for coding agents and read-only pre-PR reviewer agents. |
+| Agents | `AGENTS.md` | A guide for coding agents: the architecture contract and the starter's default rules. |
 
 ## Requirements
 
@@ -59,7 +59,7 @@ To make modules depend on a tenant or organization, pass your own context to `Mo
 
 ## Panels and roles
 
-Roles live in `App\Modules\Users\Enums\UserType` and map one-to-one to panels through `App\Panels\Commons\Enums\PanelID`. `Admin` and `SuperAdmin` each have a panel. `Reviewer` and `Participant` exist as roles but cannot sign in until you give them a panel.
+Roles live in `App\Modules\Users\Enums\UserType` and map one-to-one to panels through `App\Panels\Commons\Enums\PanelID`. The starter ships `Admin` and `SuperAdmin`, each with its own panel. The `type` column has no default, so every user gets an explicit role. The Users module README explains how to add one.
 
 To add a panel, copy one under `app/Panels/`, add a case to `PanelID`, and list the provider in `bootstrap/providers.php`. Details are in [app/Modules/Users/README.md](app/Modules/Users/README.md).
 
@@ -88,7 +88,7 @@ Shared browser steps, such as signing in through a panel, live in `tests/Helpers
 
 ## Localization
 
-Write strings in English in the code. Each module and panel has an `es.json` with the Spanish translations. `.env.example` sets Spanish as the app locale with English as the fallback; change `APP_LOCALE` to switch.
+Write strings in English in the code. The app renders English by default. Modules and panels ship an `es.json` with Spanish translations as a working example: set `APP_LOCALE=es` to use them, or add a catalog for your own language the same way.
 
 ## Deployment
 

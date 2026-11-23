@@ -6,8 +6,8 @@ use Filament\Auth\Pages\Login as BaseLogin;
 use Illuminate\Contracts\Support\Htmlable;
 
 /**
- * Login page for Admin and Reviewers
- * In this login page we don't render the registration link because the registration is by invitation only
+ * Login page for the panels. It renders no registration link because the
+ * starter ships no self-registration.
  */
 class Login extends BaseLogin
 {
