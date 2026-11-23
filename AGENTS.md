@@ -36,7 +36,7 @@ These bind what you write. They extend `app/README.md`, `### Modules` and `## Fi
 - **Link only to what a clone of this repo contains.** In code, tests, and living docs (`README.md` files), a pointer must resolve inside the repository: a class, a test, a README section. Never cite an id from a document that lives elsewhere (a spec requirement number, a decision code, a tracker id); state the rule in plain words instead.
 - No process or history: no pull request numbers, task ids, session ids, or review-finding ids used as history, nothing that reads as "fixed in this batch" or "verified green". Git holds that. The one exception is a status marker for intentionally incomplete work, `TODO(task N.N):` or `UNMOUNTED:`, which states current state; an id may appear only inside such a marker.
 - Don't add docblocks or type annotations to code you did not change. Remove dead code rather than commenting it out.
-- Living docs never cite code by line number; `tests/Unit/Docs/CodeReferenceGuardTest.php` fails on such citations. Cite by symbol name.
+- Living docs never cite code by line number. Cite by symbol name.
 - The rule binds added and rewritten lines, not the whole repo. A copied sentence that carries a provenance id counts as new text.
 - One mechanical scan for the provenance class, `scripts/review-scans.sh comments [base-ref]`:
 

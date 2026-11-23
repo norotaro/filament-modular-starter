@@ -88,7 +88,7 @@ Shared browser steps, such as signing in through a panel, live in `tests/Helpers
 
 ## Localization
 
-Write strings in English in the code. Each module and panel has an `es.json` with the Spanish translations. `.env.example` sets Spanish as the app locale with English as the fallback; change `APP_LOCALE` to switch.
+Write strings in English in the code. The app renders English by default. Modules and panels ship an `es.json` with Spanish translations as a working example: set `APP_LOCALE=es` to use them, or add a catalog for your own language the same way.
 
 ## Deployment
 

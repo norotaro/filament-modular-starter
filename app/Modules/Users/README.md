@@ -53,7 +53,7 @@ The model's own docblock: *"Base identity model representing the raw user record
 
 Panel access is enforced by `Identity::canAccessPanel()`: `PanelID::tryFrom($panel->getId())`, then `$panelId !== null && $panelId->isAccessibleBy($this->type)`. An **unknown panel id returns false** — it fails closed. The login attempt itself is filtered earlier by the `eloquent-panel-user` auth driver (`Panels\Commons\Auth\PanelUserProvider`), which restricts the user query per panel and finds nobody by credentials outside a known panel, so an Admin typing a SuperAdmin email gets a credential error rather than a post-login rejection.
 
-`canImpersonate()` / `canBeImpersonated()` remain as the documented rule — only Super Admins may impersonate, and a Super Admin may never be impersonated — even though the impersonation package was pruned with the rest of the domain; the methods are what a re-added package reads.
+`canImpersonate()` / `canBeImpersonated()` remain as the documented rule — only Super Admins may impersonate, and a Super Admin may never be impersonated. The starter ships no impersonation package; the methods are the hook one reads when you add it.
 
 ## Lifecycle
 
